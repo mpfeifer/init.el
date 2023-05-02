@@ -1,0 +1,12 @@
+session*
+projectile-bookmarks.eld
+recentf
+eln-cache
+history
+auto-save-list
+desktop/
+elpa/
+systems/
+transient/
+.cache
+bookmarks

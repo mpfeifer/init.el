@@ -551,6 +551,9 @@ emacsclient the buffer is opened in a new frame."
         (setq info-buffer (get-buffer-create info-new-buffer-name))
         (info nil info-buffer)))))
 
+(use-package scratchy
+  :ensure nil)
+
 (use-package help
   :ensure nil
   :init
@@ -558,4 +561,3 @@ emacsclient the buffer is opened in a new frame."
 
 ;; load system specific settings
 (load-file (format"~/.emacs.d/systems/%s/host-init.el" (system-name)))
-

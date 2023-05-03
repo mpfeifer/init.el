@@ -1,39 +1,16 @@
-;;;;; Startup optimizations
-
-(setq gc-cons-threshold-original gc-cons-threshold)
-(setq gc-cons-threshold (expt 2 27))
-
-(setq file-name-handler-alist-original file-name-handler-alist)
-(setq file-name-handler-alist nil)
-
-;;;;;; Set deferred timer to reset them
-
-(run-with-idle-timer
- 5 nil
- (lambda ()
-   (setq gc-cons-threshold gc-cons-threshold-original)
-   (setq file-name-handler-alist file-name-handler-alist-original)
-   (makunbound 'gc-cons-threshold-original)
-   (makunbound 'file-name-handler-alist-original)
-   (message "gc-cons-threshold and file-name-handler-alist restored")))
-
-;;;;; End of startup optimizations
-
 (setq custom-file (format "~/.emacs.d/systems/%s/custom.el" (system-name)))
 
 (load custom-file)
 
-(package-initialize)
-
-(require 'package)
-
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-			 ("gnu" . "https://elpa.gnu.org/packages/")
-			 ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
-
-(setq package-archive-priorities '(("melpa" . 100)
-				   ("gnu" . 50)
-				   ("nongnu" . 25)))
+(use-package package
+  :ensure nil
+  :config
+  (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+			   ("gnu" . "https://elpa.gnu.org/packages/")
+			   ("nongnu" . "https://elpa.nongnu.org/nongnu/"))
+        package-archive-priorities '(("melpa" . 100)
+				     ("gnu" . 50)
+				     ("nongnu" . 25))))
 
 (use-package benchmark-init
   :demand t
@@ -42,8 +19,11 @@
   (benchmark-init/activate))
 
 (use-package gcmh
-  :init (setq gc-cons-threshold (* 80 1024 1024))
-  :hook (emacs-startup . gcmh-mode))
+  :init
+  (setq gc-cons-threshold (* 80 1024 1024)
+        gcmh-verbose t)
+  :hook 
+  (emacs-startup . gcmh-mode))
 
 (use-package desktop
   :ensure nil
@@ -189,7 +169,7 @@
 (setq company-tooltip-align-annotations t)
 
 ;; formats the buffer before saving
-(add-hook 'before-save-hook 'tide-format-before-save)
+;; (add-hook 'before-save-hook 'tide-format-before-save)
 
 ;; if you use typescript-mode
 (add-hook 'typescript-mode-hook #'setup-tide-mode)
@@ -397,9 +377,10 @@ emacsclient the buffer is opened in a new frame."
                 (if (file-exists-p (byte-compile-dest-file buffer-file-name))
                     (byte-compile-file buffer-file-name)))))
   :config
-  (company-mode)
-  (add-hook 'emacs-lisp-mode-hook 'imenu-add-to-menubar-0)
-  (add-hook 'emacs-lisp-mode-hook 'recompile-elc-on-save))
+  :hook (emacs-lisp-mode-hook . (progn
+                                  (company-mode)
+                                  (imenu-add-to-menubar-0)
+                                  (recompile-elc-on-save))))
 
 (use-package projectile
   :bind (:map projectile-mode-map
@@ -553,6 +534,8 @@ emacsclient the buffer is opened in a new frame."
 
 (use-package scratchy
   :ensure nil)
+
+(use-package hydra)
 
 (use-package help
   :ensure nil

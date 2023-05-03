@@ -25,6 +25,26 @@
 
 (package-initialize)
 
+(require 'package)
+
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+			 ("gnu" . "https://elpa.gnu.org/packages/")
+			 ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
+
+(setq package-archive-priorities '(("melpa" . 100)
+				   ("gnu" . 50)
+				   ("nongnu" . 25)))
+
+(use-package benchmark-init
+  :demand t
+  :hook (after-init . benchmark-init/deactivate)
+  :config
+  (benchmark-init/activate))
+
+(use-package gcmh
+  :init (setq gc-cons-threshold (* 80 1024 1024))
+  :hook (emacs-startup . gcmh-mode))
+
 (use-package desktop
   :ensure nil
   :init
@@ -66,6 +86,7 @@
          ("M-Z" . zap-up-to-char))
   :hook ((before-save-hook . delete-trailing-whitespace))
   :init
+  (global-unset-key (kbd "C-z"))
   (setq ring-bell-function 'ignore
         set-mark-command-repeat-pop t
         scroll-step 1
@@ -73,6 +94,7 @@
         auto-window-vscroll nil
         delete-exited-processes t)
   (setq-default indent-tabs-mode nil)
+
   (put 'set-goal-column 'disabled nil)
   (put 'downcase-region 'disabled nil)
   ;; handy alias to circumvent the not so intuitive emacs naming
@@ -113,16 +135,6 @@
                  (reusable-frames . visible)
                  (side            . bottom)
                  (window-height   . 0.3))))
-
-(require 'package)
-
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-			 ("gnu" . "https://elpa.gnu.org/packages/")
-			 ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
-
-(setq package-archive-priorities '(("melpa" . 100)
-				   ("gnu" . 50)
-				   ("nongnu" . 25)))
 
 (defun new-frame ()
   (interactive)

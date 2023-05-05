@@ -2,6 +2,8 @@
 
 (load custom-file)
 
+(require 'use-package)
+
 (use-package package
   :ensure nil
   :config
@@ -376,11 +378,11 @@ emacsclient the buffer is opened in a new frame."
               (lambda ()
                 (if (file-exists-p (byte-compile-dest-file buffer-file-name))
                     (byte-compile-file buffer-file-name)))))
-  :config
-  :hook (emacs-lisp-mode-hook . (progn
-                                  (company-mode)
-                                  (imenu-add-to-menubar-0)
-                                  (recompile-elc-on-save))))
+  (defun mpx-setup-emacs-lisp-mode ()
+    (company-mode)
+    (imenu-add-to-menubar-0)
+    (recompile-elc-on-save))
+  :hook (emacs-lisp-mode-hook . mpx-setup-emacs-lisp-mode))
 
 (use-package projectile
   :bind (:map projectile-mode-map

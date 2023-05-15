@@ -42,6 +42,7 @@
   (find-file (format "%s/init.el" user-emacs-directory)))
 
 (use-package hl-line
+  :disabled
   :ensure nil
   :config
   (global-hl-line-mode))
@@ -58,9 +59,44 @@
         auto-insert-query nil)
   (auto-insert-mode))
 
+(use-package isearch
+  :after (replace)
+  :bind (:map isearch-mode-map
+              ("C-o" . isearch-occur))
+  :init
+   (defun isearch-occur ()
+      "Invoke `occur' from within isearch."
+      (interactive)
+      (let ((case-fold-search isearch-case-fold-search))
+        (occur (if isearch-regexp isearch-string (regexp-quote isearch-string)))))
+  :ensure nil)
+
+(use-package replace
+  :ensure nil
+;;  :hook ((occur-mode-hook . hl-line-mode))
+  :bind (("C-c o" . occur))
+  :init
+  (add-to-list 'display-buffer-alist
+               '("*Occur*"
+                 (display-buffer-at-bottom
+                  display-buffer-reuse-window
+                  display-buffer-in-side-window)
+                 (reusable-frames . visible)
+                 (side            . bottom)
+                 (window-height   . 0.3)))
+  (advice-add 'occur :after
+              #'(lambda (origin &rest args)
+                 (select-window (get-buffer-window "*Occur*"))
+                 (goto-char (point-min))
+                 )))
 
 (autoload 'zap-up-to-char "misc"
   "Kill up to, but not including ARGth occurrence of CHAR.")
+
+(use-package ffap
+  :bind ("C-c f" . ffap)
+  :ensure nil
+  :after emacs)
 
 (use-package emacs
   :ensure nil
@@ -76,7 +112,6 @@
         auto-window-vscroll nil
         delete-exited-processes t)
   (setq-default indent-tabs-mode nil)
-
   (put 'set-goal-column 'disabled nil)
   (put 'downcase-region 'disabled nil)
   ;; handy alias to circumvent the not so intuitive emacs naming
@@ -99,8 +134,12 @@
       (menu-bar-mode 1)
       (tooltip-mode -1)
       (scroll-bar-mode -1)))
+  (add-to-list 'display-buffer-alist '("*Buffer List*"  (display-buffer-same-window)))
+  ;; the mode-line
   (setq mode-line-modes nil)
-  (add-to-list 'display-buffer-alist '("*Buffer List*"  (display-buffer-same-window))))
+  (display-time-mode)
+  (line-number-mode)
+  (column-number-mode))
 
 (use-package recentf
   :ensure nil
@@ -123,9 +162,6 @@
   (let ((pop-up-frames t))
     (select-frame (make-frame))))
 
-(global-set-key (kbd "<f2>") 'new-frame)
-(global-set-key (kbd "<f3>") 'delete-frame)
-
 (defun show-info-new-frame ()
   "Open info browser in new frame."
   (interactive)
@@ -133,12 +169,9 @@
     (select-frame (new-frame)))
   (info nil (generate-new-buffer-name "*info*")))
 
-(global-set-key (kbd "<f1>") 'show-info-new-frame)
-
 ;; See https://github.com/jwiegley/use-package
 ;; Consider https://github.com/slotThe/vc-use-package
 (require 'use-package)
-
 (setq use-package-always-ensure t)
 
 (use-package savehist
@@ -150,10 +183,10 @@
   :bind (:map company-active-map
               ("C-n" . company-select-next)
               ("C-p" . company-select-previous))
-  :init
-  (global-company-mode t)
   :config
-  (setq company-idle-delay 0.3))
+  (setq company-tooltip-align-annotations t)
+  (setq company-idle-delay 0.3)
+  (global-company-mode t))
 
 (defun setup-tide-mode ()
   (interactive)
@@ -167,16 +200,9 @@
   ;; `M-x package-install [ret] company`
   (company-mode +1))
 
-;; aligns annotation to the right hand side
-(setq company-tooltip-align-annotations t)
-
-;; formats the buffer before saving
-;; (add-hook 'before-save-hook 'tide-format-before-save)
-
-;; if you use typescript-mode
-(add-hook 'typescript-mode-hook #'setup-tide-mode)
-
 (use-package typescript-mode
+  :hook ((typescript-mode . setup-tide-mode)
+         (before-save-hook . tide-format-before-save))
   :config
   (setq-default typescript-indent-level 4))
 
@@ -184,8 +210,7 @@
 (use-package tide
   :after (typescript-mode company flycheck)
   :hook ((typescript-mode . tide-setup)
-         (typescript-mode . tide-hl-identifier-mode)
-         (before-save . tide-format-before-save)))
+         (typescript-mode . tide-hl-identifier-mode)))
 
 (use-package all-the-icons
   :if (display-graphic-p))
@@ -204,10 +229,65 @@
   (yas-global-mode))
 
 (use-package avy
-  :bind ("C-c j" . avy-goto-word-1))
+  :bind ("C-c j". avy-goto-word-1))
+
+  (defun er--inside-org-table-p ()
+    "Check via text properties. If 2nd element equals org-table assume
+point is in org table."
+    (eq
+     (nth 1 (text-properties-at (point)))
+     'org-table))
 
 (use-package expand-region
-  :bind ("C-+" . er/expand-region))
+  :bind ("C-+" . er/expand-region)
+  :after org
+  :init
+
+  (defun er/mark-html-tag-content ()
+    "Mark the inside of a org table cell"
+    (interactive)
+    (let ((point-pos (point)))
+      (search-backward ">" (point-min) t)
+      (forward-char 1)
+      (set-mark (point))
+      (goto-char point-pos)
+      (search-forward "</" (point-max) t)
+      (backward-char 2)
+      (exchange-point-and-mark)))
+
+  (defun er/mark-html-tag-content-with-tag ()
+    "Mark the inside of a org table cell"
+    (interactive)
+    (let ((point-pos (point)))
+      (search-backward "<" (point-min) t)
+      (set-mark (point))
+      (goto-char point-pos)
+      (search-forward ">" (point-max) t)
+      (exchange-point-and-mark)))
+
+  (defun er/mark-org-table-cell ()
+    "Mark the inside of a org table cell"
+    (interactive)
+    (let ((beginning-of-line-pos nil)
+          (end-of-line-pos nil))
+      (save-excursion
+        (beginning-of-line)
+        (setq beginning-of-line-pos (point))
+        (end-of-line)
+        (setq end-of-line-pos (point)))
+      (when (er--inside-org-table-p)
+        (search-backward "|" beginning-of-line-pos t)
+        (forward-char 1)
+        (set-mark (point))
+        (search-forward "|" end-of-line-pos t)
+        (backward-char 2)
+        (exchange-point-and-mark))))
+
+  :hook ((org-mode . (lambda ()
+                       (add-to-list 'er/try-expand-list 'er/mark-org-table-cell)))
+         (web-mode . (lambda ()
+                       (add-to-list 'er/try-expand-list er/mark-html-tag-content-with-tag)
+                       (add-to-list 'er/try-expand-list er/mark-html-tag-content)))))
 
 (use-package ivy
   :config
@@ -223,7 +303,7 @@
   (add-hook 'server-visit-hook 'open-buffer-in-new-frame))
 
 (use-package prog-mode
-  :hook ((prog-mode-hook .electric-pair-mode))
+  :hook ((prog-mode-hook . electric-pair-mode))
   :ensure nil)
 
 (use-package fill-column-indicator
@@ -263,8 +343,9 @@
   (defun shx-find-variables ()
     "Extract list of variable names from shell script"
     (let ((undeclared (re-seq "^\\([0-9a-zA-Z_]+\\)=.*$" (buffer-substring-no-properties (point-min) (point-max)) 1))
-          (declared (re-seq "^declare.*[[:space:]]\\([0-9a-zA-Z_]+\\)\\(=.*\\)?$" (buffer-substring-no-properties (point-min) (point-max)) 1)))
-      (sort (append declared undeclared) 'string<)))
+          (declared (re-seq "^declare.*[[:space:]]\\([0-9a-zA-Z_]+\\)\\(=.*\\)?$" (buffer-substring-no-properties (point-min) (point-max)) 1))
+          (forvars (re-seq "^[[:space:]]*for \\([0-9a-zA-Z_]+\\)[[:space:]]in[[:space:]].*$" (buffer-substring-no-properties (point-min) (point-max)) 1)))
+      (sort (append declared undeclared forvars) 'string<)))
 
   (defconst shx-bash-builtin-variables (list "BASH" "BASHOPTS" "BASHPID" "BASH_ALIASES" "BASH_ARGC" "BASH_ARGV" "BASH_CMDS" "BASH_COMMAND" "BASH_EXECUTION_STRING" "BASH_LINENO" "BASH_LOADABLES_PATH" "BASH_REMATCH" "BASH_SOURCE" "BASH_SUBSHELL" "BASH_VERSINFO" "BASH_VERSION" "COMP_CWORD" "COMP_KEY" "COMP_LINE" "COMP_POINT" "COMP_TYPE" "COMP_WORDBREAKS" "COMP_WORDS" "COPROC" "DIRSTACK" "EUID" "FUNCNAME" "GROUPS" "HISTCMD" "HOSTNAME" "HOSTTYPE" "LINENO" "MACHTYPE" "MAPFILE" "OLDPWD" "OPTARG" "OPTIND" "OSTYPE" "PIPESTATUS" "PPID" "PWD" "RANDOM" "READLINE_LINE" "READLINE_POINT" "REPLY" "SECONDS" "SHELLOPTS" "SHLVL" "UID" "BASH_COMPAT" "BASH_ENV" "BASH_XTRACEFD" "CDPATH" "CHILD_MAX" "COLUMNS" "COMPREPLY" "EMACS" "ENV" "EXECIGNORE" "FCEDIT" "FIGNORE" "FUNCNEST" "GLOBIGNORE" "HISTCONTROL" "HISTFILE" "HISTIGNORE" "HISTSIZE" "HISTTIMEFORMAT" "HOME" "HOSTFILE" "IFS" "IGNOREEOF" "INPUTRC" "LANG" "LC_ALL" "LC_COLLATE" "LC_CTYPE" "LC_MESSAGES" "LC_NUMERIC" "LC_TIME" "LINES" "MAIL" "MAILCHECK" "MAILPATH" "OPTERR" "PATH" "POSIXLY_CORRECT" "PROMPT_COMMAND" "PROMPT_DIRTRIM" "PS0" "PS1" "PS2" "PS3" "PS4" "SHELL" "TIMEFORMAT" "TMOUT" "TMPDIR" "auto_resume" "histchars"))
 
@@ -334,6 +415,7 @@
   (use-package material-theme)
   (use-package immaterial-theme)
   (use-package solarized-theme)
+  (use-package esmond-theme)
   :config
   (change-theme 'material-light 'material))
 
@@ -366,42 +448,39 @@ emacsclient the buffer is opened in a new frame."
     (when (listp things-value)
       (edit-list (intern thing)))))
 
+(defun mpx-recompile-elc-on-save ()
+  "If you're saving an elisp file, likely the .elc is no longer valid."
+  (if (file-exists-p (byte-compile-dest-file buffer-file-name))
+      (byte-compile-file buffer-file-name)))
+
+(defun mpx-setup-emacs-lisp-mode ()
+  (company-mode)
+  (imenu-add-to-menubar-0)
+  (make-local-variable 'after-save-hook)
+  (add-hook 'after-save-hook 'mpx-recompile-elc-on-save))
+
 (use-package elisp-mode
+  :hook (emacs-lisp-mode-hook . mpx-setup-emacs-lisp-mode)
   :bind (:map emacs-lisp-mode-map
               ("C-c C-c" . mpx-abracadabra-el))
-  :ensure nil
-  :init
-  (defun recompile-elc-on-save ()
-    "If you're saving an elisp file, likely the .elc is no longer valid."
-    (make-local-variable 'after-save-hook)
-    (add-hook 'after-save-hook
-              (lambda ()
-                (if (file-exists-p (byte-compile-dest-file buffer-file-name))
-                    (byte-compile-file buffer-file-name)))))
-  (defun mpx-setup-emacs-lisp-mode ()
-    (company-mode)
-    (imenu-add-to-menubar-0)
-    (recompile-elc-on-save))
-  :hook (emacs-lisp-mode-hook . mpx-setup-emacs-lisp-mode))
+  :ensure nil)
 
 (use-package projectile
-  :bind (:map projectile-mode-map
-              ("C-c p" . projectile-command-map))
   ;; C-c p p switch project
   ;; C-c p s g grep in project
-  ;; C-c p ! run sync ommand in project root
+  ;; C-c p ! run sync command in project root
   ;; C-c p T run tests
   ;; C-c p t toggle between file and test file
   ;; C-c p m projectile commander
   ;; C-c p c compile project
   ;; C-c p [45] f find file [in other window/frame]
   ;; C-c p [45] d find project dir [in other window/frame]
+  :bind ("C-c p" . projectile-command-map)
   :config
   (setq projectile-auto-discover nil)
   (add-to-list 'projectile-globally-ignored-directories "node_modules")
   (add-to-list 'projectile-globally-ignored-directories "dist")
   (projectile-mode +1))
-
 
 (use-package magit
   :bind ("C-c g" . magit-status))
@@ -508,12 +587,15 @@ emacsclient the buffer is opened in a new frame."
   :config
   (setq windmove-wrap-around nil))
 
-(use-package windows ;; locally provided feature  required load-path
+(use-package windows
   :ensure nil
-  :bind (("<f3>" . mpx-delete-frame)
-         ("C-c w r" . mpx-rotate-windows)
-         ("C-c w s" . mpx-swap-buffers)
-         ("C-c w d" . mpx-detach-window)))
+  :bind
+  (("<f1>" . show-info-new-frame)
+   ("<f2>" . new-frame)
+   ("<f3>" . mpx-delete-frame)
+   ("C-c w r" . mpx-rotate-windows)
+   ("C-c w s" . mpx-swap-buffers)
+   ("C-c w d" . mpx-detach-window)))
 
 (use-package vc
   :ensure nil
@@ -546,3 +628,8 @@ emacsclient the buffer is opened in a new frame."
 
 ;; load system specific settings
 (load-file (format"~/.emacs.d/systems/%s/host-init.el" (system-name)))
+
+(use-package git-messenger
+  :bind ("C-x v p" . git-messenger:popup-buffer-hook))
+
+(use-package git-modes)

@@ -239,7 +239,8 @@ point is in org table."
      'org-table))
 
 (use-package expand-region
-  :bind ("C-+" . er/expand-region)
+  :bind (("C-+" . er/expand-region)
+         ("C-*" . er/contract-region))
   :after org
   :init
 

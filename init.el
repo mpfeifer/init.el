@@ -476,7 +476,7 @@ emacsclient the buffer is opened in a new frame."
   ;; C-c p c compile project
   ;; C-c p [45] f find file [in other window/frame]
   ;; C-c p [45] d find project dir [in other window/frame]
-  :bind ("C-c p" . projectile-command-map)
+  :bind ("C-c p" . 'projectile-command-map)
   :config
   (setq projectile-auto-discover nil)
   (add-to-list 'projectile-globally-ignored-directories "node_modules")

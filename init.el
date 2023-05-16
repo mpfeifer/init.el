@@ -1,3 +1,5 @@
+(defvar mpx-system-local-dir "~/.emacs.d" "Directory path for storing local system related files.")
+
 (setq custom-file (format "~/.emacs.d/systems/%s/custom.el" (system-name)))
 
 (load custom-file)
@@ -144,6 +146,7 @@
 (use-package recentf
   :ensure nil
   :init
+  (setq recentf-save-file (format "%s/recentf" mpx-system-local-dir))
   (recentf-mode))
 
 (defun add-standard-display-buffer-entry (name)
@@ -195,9 +198,6 @@
   (setq flycheck-check-syntax-automatically '(save mode-enabled))
   (eldoc-mode +1)
   (tide-hl-identifier-mode +1)
-  ;; company is an optional dependency. You have to
-  ;; install it separately via package-install
-  ;; `M-x package-install [ret] company`
   (company-mode +1))
 
 (use-package typescript-mode
@@ -209,7 +209,7 @@
 ;; this changes in emacs 29+
 (use-package tide
   :after (typescript-mode company flycheck)
-  :hook ((typescript-mode . tide-setup)
+  :hook ((typescript-mode . setup-tide-mode)
          (typescript-mode . tide-hl-identifier-mode)))
 
 (use-package all-the-icons
@@ -242,10 +242,13 @@ point is in org table."
   :bind (("C-+" . er/expand-region)
          ("C-*" . er/contract-region))
   :after org
+  :defines (er/mark-html-tag-content
+            er/mark-html-tag-content-with-tag
+            er/mark-org-table-cell)
   :init
 
   (defun er/mark-html-tag-content ()
-    "Mark the inside of a org table cell"
+    "Mark the tag content"
     (interactive)
     (let ((point-pos (point)))
       (search-backward ">" (point-min) t)
@@ -257,7 +260,7 @@ point is in org table."
       (exchange-point-and-mark)))
 
   (defun er/mark-html-tag-content-with-tag ()
-    "Mark the inside of a org table cell"
+    "Mark the tag content and enclosing tag"
     (interactive)
     (let ((point-pos (point)))
       (search-backward "<" (point-min) t)
@@ -455,13 +458,13 @@ emacsclient the buffer is opened in a new frame."
       (byte-compile-file buffer-file-name)))
 
 (defun mpx-setup-emacs-lisp-mode ()
-  (company-mode)
+  (company-mode +1)
   (imenu-add-to-menubar-0)
   (make-local-variable 'after-save-hook)
   (add-hook 'after-save-hook 'mpx-recompile-elc-on-save))
 
 (use-package elisp-mode
-  :hook (emacs-lisp-mode-hook . mpx-setup-emacs-lisp-mode)
+  :hook (emacs-lisp-mode . mpx-setup-emacs-lisp-mode)
   :bind (:map emacs-lisp-mode-map
               ("C-c C-c" . mpx-abracadabra-el))
   :ensure nil)

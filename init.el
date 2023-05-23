@@ -219,8 +219,14 @@
 (use-package all-the-icons
   :if (display-graphic-p))
 
+(use-package dired
+  :ensure nil
+  :config
+  (setq dired-dwim-target t))
+
 (use-package all-the-icons-dired
   :if (display-graphic-p)
+  :after (dired)
   :config
   (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
 

@@ -62,16 +62,17 @@
   (auto-insert-mode))
 
 (use-package isearch
+  :ensure nil
   :after (replace)
   :bind (:map isearch-mode-map
               ("C-o" . isearch-occur))
   :init
-   (defun isearch-occur ()
-      "Invoke `occur' from within isearch."
-      (interactive)
-      (let ((case-fold-search isearch-case-fold-search))
-        (occur (if isearch-regexp isearch-string (regexp-quote isearch-string)))))
-  :ensure nil)
+  (setq isearch-lazy-count t)
+  (defun isearch-occur ()
+    "Invoke `occur' from within isearch."
+    (interactive)
+    (let ((case-fold-search isearch-case-fold-search))
+      (occur (if isearch-regexp isearch-string (regexp-quote isearch-string))))))
 
 (use-package replace
   :ensure nil
@@ -186,6 +187,9 @@
   :bind (:map company-active-map
               ("C-n" . company-select-next)
               ("C-p" . company-select-previous))
+  :init
+  (defun company-mode-off ()
+      (company-mode -1))
   :config
   (setq company-tooltip-align-annotations t)
   (setq company-idle-delay 0.3)
@@ -336,6 +340,7 @@ point is in org table."
 
 (use-package sh-script
   :ensure nil
+  :defines (shx-insert-variable shx-find-variables)
   :bind (:map sh-mode-map
               ("$" . 'shx-insert-variable))
   :hook (sh-mode-hook . sh-mode-setup)
@@ -412,6 +417,7 @@ point is in org table."
 ;; (use-package tree-sitter-langs)
 
 (use-package theme-changer
+  :defines (change-theme)
   :init
   (setq calendar-latitude 50.775555
         calendar-longitude 6.083611
@@ -549,6 +555,8 @@ emacsclient the buffer is opened in a new frame."
   (org-ai-global-mode))
 
 (use-package org
+  :after company
+  :hook (org-mode . company-mode-off)
   :config
   (org-babel-do-load-languages
    'org-babel-load-languages

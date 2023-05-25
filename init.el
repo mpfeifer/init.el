@@ -137,12 +137,20 @@
       (menu-bar-mode 1)
       (tooltip-mode -1)
       (scroll-bar-mode -1)))
-  (add-to-list 'display-buffer-alist '("*Buffer List*"  (display-buffer-same-window)))
   ;; the mode-line
   (setq mode-line-modes nil)
   (display-time-mode)
   (line-number-mode)
   (column-number-mode))
+
+(use-package ibuffer
+  :after (all-the-icons-ibuffer)
+  :bind (("C-x C-b" . ibuffer))
+  :ensure nil
+  :hook (ibuffer . all-the-icons-ibuffer)
+  :hook (ibuffer . hl-line-mode)
+  :init
+  (add-to-list 'display-buffer-alist '("*Ibuffer*"  (display-buffer-same-window))))
 
 (use-package recentf
   :ensure nil
@@ -256,7 +264,6 @@ point is in org table."
             er/mark-html-tag-content-with-tag
             er/mark-org-table-cell)
   :init
-
   (defun er/mark-html-tag-content ()
     "Mark the tag content"
     (interactive)
@@ -296,7 +303,6 @@ point is in org table."
         (search-forward "|" end-of-line-pos t)
         (backward-char 2)
         (exchange-point-and-mark))))
-
   :hook ((org-mode . (lambda ()
                        (add-to-list 'er/try-expand-list 'er/mark-org-table-cell)))
          (web-mode . (lambda ()

@@ -1,3 +1,5 @@
+;; (toggle-debug-on-error)
+
 (defvar mpx-system-local-dir "~/.emacs.d" "Directory path for storing local system related files.")
 
 (setq custom-file (format "~/.emacs.d/systems/%s/custom.el" (system-name)))
@@ -29,19 +31,64 @@
   :hook 
   (emacs-startup . gcmh-mode))
 
+(use-package expand-region
+  :bind (("C-+" . er/expand-region)
+         ("C-*" . er/contract-region))
+  :init
+
+  (defun er--inside-org-table-p ()
+    "Check via text properties. If 2nd element equals org-table assume
+point is in org table."
+    (eq
+     (nth 1 (text-properties-at (point)))
+     'org-table))
+
+  (defun er/mark-html-tag-content ()
+    "Mark the tag content"
+    (interactive)
+    (let ((point-pos (point)))
+      (search-backward ">" (point-min) t)
+      (forward-char 1)
+      (set-mark (point))
+      (goto-char point-pos)
+      (search-forward "</" (point-max) t)
+      (backward-char 2)
+      (exchange-point-and-mark)))
+
+  (defun er/mark-html-tag-content-with-tag ()
+    "Mark the tag content and enclosing tag"
+    (interactive)
+    (let ((point-pos (point)))
+      (search-backward "<" (point-min) t)
+      (set-mark (point))
+      (goto-char point-pos)
+      (search-forward ">" (point-max) t)
+      (exchange-point-and-mark)))
+
+  (defun er/mark-org-table-cell ()
+    "Mark the inside of a org table cell"
+    (interactive)
+    (let ((beginning-of-line-pos nil)
+          (end-of-line-pos nil))
+      (save-excursion
+        (beginning-of-line)
+        (setq beginning-of-line-pos (point))
+        (end-of-line)
+        (setq end-of-line-pos (point)))
+      (when (er--inside-org-table-p)
+        (search-backward "|" beginning-of-line-pos t)
+        (forward-char 1)
+        (set-mark (point))
+        (search-forward "|" end-of-line-pos t)
+        (backward-char 2)
+        (exchange-point-and-mark)))))
+
 (use-package desktop
   :ensure nil
   :init
   (desktop-save-mode +1))
 
 (add-to-list 'load-path (format "%s/elisp" user-emacs-directory))
-
-(defun mp-find-config ()
-  "Edit init.el"
-  (interactive)
-  (let ((pop-up-frames t))
-    (select-frame (new-frame)))
-  (find-file (format "%s/init.el" user-emacs-directory)))
 
 (use-package hl-line
   :disabled
@@ -76,7 +123,7 @@
 
 (use-package replace
   :ensure nil
-;;  :hook ((occur-mode-hook . hl-line-mode))
+  ;;  :hook ((occur-mode-hook . hl-line-mode))
   :bind (("C-c o" . occur))
   :init
   (add-to-list 'display-buffer-alist
@@ -89,9 +136,9 @@
                  (window-height   . 0.3)))
   (advice-add 'occur :after
               #'(lambda (origin &rest args)
-                 (select-window (get-buffer-window "*Occur*"))
-                 (goto-char (point-min))
-                 )))
+                  (select-window (get-buffer-window "*Occur*"))
+                  (goto-char (point-min))
+                  )))
 
 (autoload 'zap-up-to-char "misc"
   "Kill up to, but not including ARGth occurrence of CHAR.")
@@ -105,8 +152,15 @@
   :ensure nil
   :bind (("<f4>" . mp-find-config)
          ("M-Z" . zap-up-to-char))
-  :hook ((before-save-hook . delete-trailing-whitespace))
+  :hook ((before-save-hook . delete-trailing-whitespace)
+         (clone-indirect-buffer-hook . view-mode))
   :init
+  (defun mp-find-config ()
+    "Edit init.el"
+    (interactive)
+    (let ((pop-up-frames t))
+      (select-frame (new-frame)))
+    (find-file (format "%s/init.el" user-emacs-directory)))
   (global-unset-key (kbd "C-z"))
   (setq ring-bell-function 'ignore
         set-mark-command-repeat-pop t
@@ -169,18 +223,6 @@
                  (side            . bottom)
                  (window-height   . 0.3))))
 
-(defun new-frame ()
-  (interactive)
-  (let ((pop-up-frames t))
-    (select-frame (make-frame))))
-
-(defun show-info-new-frame ()
-  "Open info browser in new frame."
-  (interactive)
-  (let ((pop-up-frames t))
-    (select-frame (new-frame)))
-  (info nil (generate-new-buffer-name "*info*")))
-
 ;; See https://github.com/jwiegley/use-package
 ;; Consider https://github.com/slotThe/vc-use-package
 (require 'use-package)
@@ -197,7 +239,7 @@
               ("C-p" . company-select-previous))
   :init
   (defun company-mode-off ()
-      (company-mode -1))
+    (company-mode -1))
   :config
   (setq company-tooltip-align-annotations t)
   (setq company-idle-delay 0.3)
@@ -248,66 +290,6 @@
 
 (use-package avy
   :bind ("C-c j". avy-goto-word-1))
-
-  (defun er--inside-org-table-p ()
-    "Check via text properties. If 2nd element equals org-table assume
-point is in org table."
-    (eq
-     (nth 1 (text-properties-at (point)))
-     'org-table))
-
-(use-package expand-region
-  :bind (("C-+" . er/expand-region)
-         ("C-*" . er/contract-region))
-  :after org
-  :defines (er/mark-html-tag-content
-            er/mark-html-tag-content-with-tag
-            er/mark-org-table-cell)
-  :init
-  (defun er/mark-html-tag-content ()
-    "Mark the tag content"
-    (interactive)
-    (let ((point-pos (point)))
-      (search-backward ">" (point-min) t)
-      (forward-char 1)
-      (set-mark (point))
-      (goto-char point-pos)
-      (search-forward "</" (point-max) t)
-      (backward-char 2)
-      (exchange-point-and-mark)))
-
-  (defun er/mark-html-tag-content-with-tag ()
-    "Mark the tag content and enclosing tag"
-    (interactive)
-    (let ((point-pos (point)))
-      (search-backward "<" (point-min) t)
-      (set-mark (point))
-      (goto-char point-pos)
-      (search-forward ">" (point-max) t)
-      (exchange-point-and-mark)))
-
-  (defun er/mark-org-table-cell ()
-    "Mark the inside of a org table cell"
-    (interactive)
-    (let ((beginning-of-line-pos nil)
-          (end-of-line-pos nil))
-      (save-excursion
-        (beginning-of-line)
-        (setq beginning-of-line-pos (point))
-        (end-of-line)
-        (setq end-of-line-pos (point)))
-      (when (er--inside-org-table-p)
-        (search-backward "|" beginning-of-line-pos t)
-        (forward-char 1)
-        (set-mark (point))
-        (search-forward "|" end-of-line-pos t)
-        (backward-char 2)
-        (exchange-point-and-mark))))
-  :hook ((org-mode . (lambda ()
-                       (add-to-list 'er/try-expand-list 'er/mark-org-table-cell)))
-         (web-mode . (lambda ()
-                       (add-to-list 'er/try-expand-list er/mark-html-tag-content-with-tag)
-                       (add-to-list 'er/try-expand-list er/mark-html-tag-content)))))
 
 (use-package ivy
   :config
@@ -524,8 +506,13 @@ emacsclient the buffer is opened in a new frame."
 (use-package ahk-mode)
 
 (use-package web-mode
+  :after (expand-region)
   :mode ("\\.html\\'")
   :config
+  (add-hook 'web-mode-hook 
+            #'(lambda ()
+              (add-to-list 'er/try-expand-list er/mark-html-tag-content-with-tag)
+              (add-to-list 'er/try-expand-list er/mark-html-tag-content)))
   (setq web-mode-markup-indent-offset 2)
   (setq web-mode-engines-alist
         '(("django" . "focus/.*\\.html\\'")
@@ -567,9 +554,12 @@ emacsclient the buffer is opened in a new frame."
   (org-ai-global-mode))
 
 (use-package org
-  :after company
+  :after (company expand-region)
   :hook (org-mode . company-mode-off)
   :config
+  (setq org-startup-folded t)
+  (add-hook 'org-mode-hook #'(lambda ()
+                             (add-to-list 'er/try-expand-list er/mark-org-table-cell)))q
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)
@@ -581,8 +571,6 @@ emacsclient the buffer is opened in a new frame."
   :mode ("\\.md\\'"))
 
 (use-package markdown-preview-mode)
-
-(add-hook 'clone-indirect-buffer-hook 'view-mode)
 
 (use-package edit-list
   :after elisp-mode)
@@ -596,13 +584,6 @@ emacsclient the buffer is opened in a new frame."
 
 (use-package graphviz-dot-mode)
 
-(use-package grep
-  :ensure nil
-  :config
-  (defun setup-grep-mode ()
-    (setq truncate-lines 't))
-  (add-hook 'grep-mode-hook 'setup-grep-mode))
-
 (use-package windmove
   :bind (("C-<up>" . windmove-up)
          ("C-<down>" . windmove-down)
@@ -614,12 +595,16 @@ emacsclient the buffer is opened in a new frame."
 (use-package windows
   :ensure nil
   :bind
-  (("<f1>" . show-info-new-frame)
-   ("<f2>" . new-frame)
+  (("<f2>" . new-frame)
    ("<f3>" . mpx-delete-frame)
    ("C-c w r" . mpx-rotate-windows)
    ("C-c w s" . mpx-swap-buffers)
-   ("C-c w d" . mpx-detach-window)))
+   ("C-c w d" . mpx-detach-window))
+  :init
+  (defun new-frame ()
+    (interactive)
+    (let ((pop-up-frames t))
+      (select-frame (make-frame)))))
 
 (use-package vc
   :ensure nil
@@ -628,17 +613,15 @@ emacsclient the buffer is opened in a new frame."
 
 (use-package info
   :ensure nil
-  :bind (("C-h i" . mpx-open-info-browser))
+  :bind (("<f1>" . mpx-new-info-browser)
+         ("C-h i" . mpx-new-info-browser))
   :init
-  (defun mpx-open-info-browser()
-    "Have info open new buffer on each invocation"
+  (defun mpx-new-info-browser ()
+    "Open info browser in new frame."
     (interactive)
-    (select-frame (make-frame))
-    (let* ((info-new-buffer-name (generate-new-buffer-name "*info*"))
-           (info-buffer nil))
-      (progn
-        (setq info-buffer (get-buffer-create info-new-buffer-name))
-        (info nil info-buffer)))))
+    (let ((pop-up-frames t))
+      (select-frame (new-frame)))
+    (info nil (generate-new-buffer-name "*info*"))))
 
 (use-package scratchy
   :ensure nil)
@@ -652,8 +635,5 @@ emacsclient the buffer is opened in a new frame."
 
 ;; load system specific settings
 (load-file (format"~/.emacs.d/systems/%s/host-init.el" (system-name)))
-
-(use-package git-messenger
-  :bind ("C-x v p" . git-messenger:popup-buffer-hook))
 
 (use-package git-modes)

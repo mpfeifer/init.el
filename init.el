@@ -480,8 +480,10 @@ emacsclient the buffer is opened in a new frame."
   ;; C-c p [45] f find file [in other window/frame]
   ;; C-c p [45] d find project dir [in other window/frame]
   :bind ("C-c p" . 'projectile-command-map)
+  :custom
+  (projectile-auto-discover nil)
+  (projectile-completion-system 'ivy)
   :config
-  (setq projectile-auto-discover nil)
   (add-to-list 'projectile-globally-ignored-directories "node_modules")
   (add-to-list 'projectile-globally-ignored-directories "dist")
   (projectile-mode +1))
@@ -554,8 +556,52 @@ emacsclient the buffer is opened in a new frame."
   (org-ai-global-mode))
 
 (use-package org
+  :custom
+  (org-default-notes-file "~/Dokumente/inbox.org") ; default refile file
+  (org-agenda-span 'day)             ; start in day view default
+  (org-agenda-files '("~/Dokumente/planner.org"))
+  (org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)" "PHONE")))
+  (org-use-fast-todo-selection t)
+  (org-tags-exclude-from-inheritance '("project"))
+  (org-capture-templates
+   (quote (("t" "todo" entry (file "~/Dokumente/inbox.org")
+            "* TODO %?\n%U\n%a\n%i" :clock-in t :clock-resume t)
+           ("n" "note" entry (file "~/Dokumente/inbox.org")
+            "* %? :NOTE:\n%U\n%a\n%i" :clock-in t :clock-resume t)
+           ("w" "From web" entry (file+headline "~/Dokumente/inbox.org" "From web")
+            "* %? %:annotation\n%U\n#+BEGIN_QUOTE\n%i\n[[%:link][Source]]\n#+END_QUOTE\n\n")
+           ("W" "Link" entry (file+headline "~/Dokumente/inbox.org" "Links")
+            "* %? %:annotation\n%U\n%:annotation")
+           ("c" "Current clocked" entry (clock)
+            "* %:annotation\n\n#+BEGIN_QUOTE\n%i\n[[%:link][Source]]\n#+END_QUOTE\n\n" :immediate-finish t)
+           ("C" "Current clocked link" entry (clock)
+            "* %:annotation\n" :immediate-finish t)
+           ("p" "Phone call" entry (file "~/Dokumente/inbox.org")
+            "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t))))
+  (org-clock-history-length 64)
+  (org-clock-in-resume t)
+  (org-clock-into-drawer t)
+  (org-clock-out-remove-zero-time-clocks t)
+  (org-clock-out-when-done t)
+  (org-clock-persist t)
+  (org-clock-persist-query-resume nil)
+  (org-clock-auto-clock-resolution (quote when-no-clock-is-running))
+  (org-clock-report-include-clocking-task t)
+  (org-startup-indented t)
+  (org-log-done t)
+  (org-confirm-babel-evaluate nil)
+  (org-fontify-done-headline t)
+  (org-fontify-whole-heading-line t)
+  (org-fontify-quote-and-verse-blocks t)
+  (org-image-actual-width '(700)) ;; Set image width to 700
+  (org-src-tab-acts-natively t)
+  (org-export-with-sub-superscripts nil)
   :after (company expand-region)
   :hook (org-mode . company-mode-off)
+  :bind
+  ("<f12>" . 'org-agenda)
+  ("<f10>" . 'org-clock-goto)
+  ("C-<f10>" . 'org-clock-in)
   :config
   (setq org-startup-folded t)
   (add-hook 'org-mode-hook #'(lambda ()
@@ -566,6 +612,12 @@ emacsclient the buffer is opened in a new frame."
      (dot . t)
      (plantuml . t)))
   (add-to-list 'org-src-lang-modes '("plantuml" . plantuml)))
+
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode))
+
+(use-package plantuml-mode
+  :mode "\\.plantuml\\'")
 
 (use-package markdown-mode
   :mode ("\\.md\\'"))

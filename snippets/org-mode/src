@@ -2,6 +2,6 @@
 # name: src
 # key: <src
 # --
-#+begin_src $1
+#+begin_src ${1:mode}
   $0
 #+end_src

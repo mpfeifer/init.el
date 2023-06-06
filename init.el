@@ -2,17 +2,18 @@
 
 (defvar mpx-system-local-dir "~/.emacs.d" "Directory path for storing local system related files.")
 
-(setq custom-file (format "~/.emacs.d/systems/%s/custom.el" (system-name)))
-
-(load custom-file)
-
-(setq package-enable-at-startup nil)
 (package-initialize)
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
 (require 'use-package)
+
+(setq custom-file (format "~/.emacs.d/systems/%s/custom.el" (system-name))
+      package-enable-at-startup nil
+      use-package-always-ensure t)
+
+(load custom-file)
 
 (use-package package
   :ensure nil
@@ -40,6 +41,7 @@
 (use-package expand-region
   :bind (("C-+" . er/expand-region)
          ("C-*" . er/contract-region))
+  :defines (er/mark-html-tag-content er/mark-html-tag-content-with-tag er/mark-org-table-cell)
   :init
 
   (defun er--inside-org-table-p ()
@@ -562,14 +564,21 @@ emacsclient the buffer is opened in a new frame."
   (org-ai-global-mode))
 
 (use-package org
-  :custom
-  (org-default-notes-file "~/Dokumente/inbox.org") ; default refile file
-  (org-agenda-span 'day)             ; start in day view default
-  (org-agenda-files '("~/Dokumente/planner.org"))
-  (org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)" "PHONE")))
-  (org-use-fast-todo-selection t)
-  (org-tags-exclude-from-inheritance '("project"))
-  (org-capture-templates
+  :after (company expand-region)
+  :hook (org-mode . company-mode-off)
+  :bind
+  ("<f12>" . 'org-agenda)
+  ("<f10>" . 'org-clock-goto)
+  ("C-<f10>" . 'org-clock-in)
+  :config
+  (setq
+   org-default-notes-file "~/Dokumente/inbox.org" ; default refile file
+   org-agenda-span 'day             ; start in day view default
+   org-agenda-files '("~/Dokumente/planner.org")
+   org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)" "PHONE"))
+   org-use-fast-todo-selection t
+   org-tags-exclude-from-inheritance '("project")
+   org-capture-templates
    (quote (("t" "todo" entry (file "~/Dokumente/inbox.org")
             "* TODO %?\n%U\n%a\n%i" :clock-in t :clock-resume t)
            ("n" "note" entry (file "~/Dokumente/inbox.org")
@@ -583,35 +592,29 @@ emacsclient the buffer is opened in a new frame."
            ("C" "Current clocked link" entry (clock)
             "* %:annotation\n" :immediate-finish t)
            ("p" "Phone call" entry (file "~/Dokumente/inbox.org")
-            "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t))))
-  (org-clock-history-length 64)
-  (org-clock-in-resume t)
-  (org-clock-into-drawer t)
-  (org-clock-out-remove-zero-time-clocks t)
-  (org-clock-out-when-done t)
-  (org-clock-persist t)
-  (org-clock-persist-query-resume nil)
-  (org-clock-auto-clock-resolution (quote when-no-clock-is-running))
-  (org-clock-report-include-clocking-task t)
-  (org-startup-indented t)
-  (org-log-done t)
-  (org-confirm-babel-evaluate nil)
-  (org-fontify-done-headline t)
-  (org-fontify-whole-heading-line t)
-  (org-fontify-quote-and-verse-blocks t)
-  (org-image-actual-width '(700)) ;; Set image width to 700
-  (org-src-tab-acts-natively t)
-  (org-export-with-sub-superscripts nil)
-  :after (company expand-region)
-  :hook (org-mode . company-mode-off)
-  :bind
-  ("<f12>" . 'org-agenda)
-  ("<f10>" . 'org-clock-goto)
-  ("C-<f10>" . 'org-clock-in)
-  :config
-  (setq org-startup-folded t)
-  (add-hook 'org-mode-hook #'(lambda ()
-                             (add-to-list 'er/try-expand-list er/mark-org-table-cell)))q
+            "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)))
+   org-clock-history-length 64
+   org-clock-in-resume t
+   org-clock-into-drawer t
+   org-clock-out-remove-zero-time-clocks t
+   org-clock-out-when-done t
+   org-clock-persist t
+   org-clock-persist-query-resume nil
+   org-clock-auto-clock-resolution (quote when-no-clock-is-running)
+   org-clock-report-include-clocking-task t
+   org-startup-indented t
+   org-log-done t
+   org-confirm-babel-evaluate nil
+   org-fontify-done-headline t
+   org-fontify-whole-heading-line t
+   org-fontify-quote-and-verse-blocks t
+   org-image-actual-width '(700) ;; Set image width to 700
+   org-src-tab-acts-natively t
+   org-export-with-sub-superscripts nil
+   org-startup-folded t)
+  
+(add-hook 'org-mode-hook #'(lambda ()
+                             (add-to-list 'er/try-expand-list er/mark-org-table-cell)))
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)
@@ -695,3 +698,8 @@ emacsclient the buffer is opened in a new frame."
 (load-file (format"~/.emacs.d/systems/%s/host-init.el" (system-name)))
 
 (use-package git-modes)
+
+(use-package newcomment
+  :bind (("C-/" . comment-region)
+         ("C-M-/" . uncomment-region))
+  :ensure nil)

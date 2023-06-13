@@ -610,20 +610,18 @@ emacsclient the buffer is opened in a new frame."
    org-use-fast-todo-selection t
    org-tags-exclude-from-inheritance '("project")
    org-capture-templates
-   (quote (("t" "todo" entry (file "~/Dokumente/inbox.org")
+   (quote (("l" "TIL" entry (file+olp+datetree "~/.emacs.d/org/til.org")
+           "* %?\n%x%^g")
+           ("t" "todo" entry (file "~/Dokumente/inbox.org")
             "* TODO %?\n%U\n%a\n%i" :clock-in t :clock-resume t)
            ("n" "note" entry (file "~/Dokumente/inbox.org")
             "* %? :NOTE:\n%U\n%a\n%i" :clock-in t :clock-resume t)
-           ("w" "From web" entry (file+headline "~/Dokumente/inbox.org" "From web")
-            "* %? %:annotation\n%U\n#+BEGIN_QUOTE\n%i\n[[%:link][Source]]\n#+END_QUOTE\n\n")
            ("W" "Link" entry (file+headline "~/Dokumente/inbox.org" "Links")
             "* %? %:annotation\n%U\n%:annotation")
            ("c" "Current clocked" entry (clock)
             "* %:annotation\n\n#+BEGIN_QUOTE\n%i\n[[%:link][Source]]\n#+END_QUOTE\n\n" :immediate-finish t)
            ("C" "Current clocked link" entry (clock)
-            "* %:annotation\n" :immediate-finish t)
-           ("p" "Phone call" entry (file "~/Dokumente/inbox.org")
-            "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)))
+            "* %:annotation\n" :immediate-finish t)))
    org-clock-history-length 64
    org-clock-in-resume t
    org-clock-into-drawer t
@@ -645,7 +643,7 @@ emacsclient the buffer is opened in a new frame."
    org-startup-folded t)
   
 (add-hook 'org-mode-hook #'(lambda ()
-                             (add-to-list 'er/try-expand-list er/mark-org-table-cell)))
+                             (add-to-list 'er/try-expand-list 'er/mark-org-table-cell)))
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)

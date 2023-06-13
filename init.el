@@ -15,7 +15,13 @@
 
 (load custom-file)
 
+(defun package-list-packages-new-frame ()
+  (interactive)
+  (select-frame (new-frame))
+  (package-list-packages))
+
 (use-package package
+  :bind (("<f6>" . package-list-packages-new-frame))
   :ensure nil
   :config
   (setq package-archives '(("melpa" . "https://melpa.org/packages/")
@@ -26,6 +32,7 @@
 				     ("nongnu" . 25))))
 
 (use-package benchmark-init
+  :disabled
   :demand t
   :hook (after-init . benchmark-init/deactivate)
   :config
@@ -291,6 +298,14 @@ point is in org table."
 (use-package all-the-icons-ibuffer
   :if (display-graphic-p))
 
+(use-package all-the-icons-ivy-rich
+  :if (display-graphic-p)
+  :init
+  (all-the-icons-ivy-rich-mode 1))
+
+(use-package all-the-icons-completion
+  :if (display-graphic-p))
+
 (use-package yasnippet
   :config
   (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets")
@@ -315,12 +330,6 @@ point is in org table."
 (use-package prog-mode
   :hook ((prog-mode-hook . electric-pair-mode))
   :ensure nil)
-
-(use-package fill-column-indicator
-  :after (prog-mode)
-  :hook ((prog-mode-hook . fci-mode))
-  :init
-  (setq fill-column 92))
 
 (defun elisp-post-processor ()
   (interactive)
@@ -418,18 +427,40 @@ point is in org table."
 
 ;; (use-package tree-sitter-langs)
 
+
+(use-package lambda-themes
+  :ensure nil)
+
+(use-package lambda-line
+  :ensure nil
+  :after (lamda-themes))
+
 (use-package theme-changer
+  :after (lambda-theme)
   :defines (change-theme)
   :init
   (setq calendar-latitude 50.775555
         calendar-longitude 6.083611
         calendar-location-name "Aachen")
   (use-package material-theme)
-  (use-package immaterial-theme)
   (use-package solarized-theme)
-  (use-package esmond-theme)
+    :config
+    (let ((line (face-attribute 'mode-line :underline)))
+      (set-face-attribute 'mode-line          nil :overline   line)
+      (set-face-attribute 'mode-line-inactive nil :overline   line)
+      (set-face-attribute 'mode-line-inactive nil :underline  line)
+      (set-face-attribute 'mode-line          nil :box        nil)
+      (set-face-attribute 'mode-line-inactive nil :box        nil)
+      (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9"))
+  (require 'blue-mood-theme)
   :config
-  (change-theme 'material-light 'material))
+;;  (change-theme 'blue-mood 'material)
+  (load-theme 'blue-mood)
+)
+
+(use-package mood-line
+  :config
+  (mood-line-mode))
 
 (use-package smartparens
   :after (prog-mode)
@@ -696,6 +727,12 @@ emacsclient the buffer is opened in a new frame."
 
 ;; load system specific settings
 (load-file (format"~/.emacs.d/systems/%s/host-init.el" (system-name)))
+
+(use-package auto-mark
+  :ensure nil
+  :config
+  (global-auto-mark-mode 1))
+
 
 (use-package git-modes)
 

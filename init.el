@@ -729,8 +729,35 @@ emacsclient the buffer is opened in a new frame."
 (use-package auto-mark
   :ensure nil
   :config
+  (setq auto-mark-command-class-alist
+        '((goto-line . jump)
+          (indent-for-tab-command . ignore)
+          (undo . ignore)
+          (tide-jump-to-definition . jump)))
   (global-auto-mark-mode 1))
 
+(use-package eshell
+  :ensure nil
+  :init
+  (declare-function eshell/pwd "pwd" ())
+  (setq eshell-prompt-regexp "┗━━ \\$ "
+        eshell-prompt-function (lambda nil
+                                 (concat "\n┏━ "
+                                         (user-login-name) "@" (system-name) ":"
+                                         (propertize (if (string= (eshell/pwd) (getenv "HOME"))
+                                                         "~"
+                                                       (replace-regexp-in-string
+                                                        (concat "^" (getenv "HOME")) "~" (eshell/pwd)))
+                                                     'face `(:foreground "orange red"))
+                                         "\n┗━━ "
+                                         (if (= (user-uid) 0) "# " "$ "))))
+  (add-hook 'eshell-mode-hook 'company-mode)
+  (add-hook 'eshell-mode-hook (lambda ()
+			        (define-key eshell-mode-map (kbd "<tab>") 'company-complete)
+			        (add-to-list 'eshell-visual-options '("git" "--help" "--paginate"))
+                                (add-to-list 'eshell-visual-subcommands '("vi"))
+                                (add-to-list 'eshell-visual-subcommands '("less"))
+			        (add-to-list 'eshell-visual-subcommands '("git" "log" "diff" "show")))))
 
 (use-package git-modes)
 

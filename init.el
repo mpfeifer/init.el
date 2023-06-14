@@ -602,45 +602,59 @@ emacsclient the buffer is opened in a new frame."
   ("<f10>" . 'org-clock-goto)
   ("C-<f10>" . 'org-clock-in)
   :config
-  (setq
-   org-default-notes-file "~/Dokumente/inbox.org" ; default refile file
-   org-agenda-span 'day             ; start in day view default
-   org-agenda-files '("~/Dokumente/planner.org")
-   org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)" "PHONE"))
-   org-use-fast-todo-selection t
-   org-tags-exclude-from-inheritance '("project")
-   org-capture-templates
-   (quote (("l" "TIL" entry (file+olp+datetree "~/.emacs.d/org/til.org")
-           "* %?\n%x%^g")
-           ("t" "todo" entry (file "~/Dokumente/inbox.org")
-            "* TODO %?\n%U\n%a\n%i" :clock-in t :clock-resume t)
-           ("n" "note" entry (file "~/Dokumente/inbox.org")
-            "* %? :NOTE:\n%U\n%a\n%i" :clock-in t :clock-resume t)
-           ("W" "Link" entry (file+headline "~/Dokumente/inbox.org" "Links")
-            "* %? %:annotation\n%U\n%:annotation")
-           ("c" "Current clocked" entry (clock)
-            "* %:annotation\n\n#+BEGIN_QUOTE\n%i\n[[%:link][Source]]\n#+END_QUOTE\n\n" :immediate-finish t)
-           ("C" "Current clocked link" entry (clock)
-            "* %:annotation\n" :immediate-finish t)))
-   org-clock-history-length 64
-   org-clock-in-resume t
-   org-clock-into-drawer t
-   org-clock-out-remove-zero-time-clocks t
-   org-clock-out-when-done t
-   org-clock-persist t
-   org-clock-persist-query-resume nil
-   org-clock-auto-clock-resolution (quote when-no-clock-is-running)
-   org-clock-report-include-clocking-task t
-   org-startup-indented t
-   org-log-done t
-   org-confirm-babel-evaluate nil
-   org-fontify-done-headline t
-   org-fontify-whole-heading-line t
-   org-fontify-quote-and-verse-blocks t
-   org-image-actual-width '(700) ;; Set image width to 700
-   org-src-tab-acts-natively t
-   org-export-with-sub-superscripts nil
-   org-startup-folded t)
+  (setq org-default-notes-file "~/Dokumente/inbox.org" ; default refile file
+        org-agenda-span 'day             ; start in day view default
+        org-agenda-files '("~/Dokumente/planner.org")
+        org-todo-keywords '((sequence "TODO(t)" "INPROGRESS(i)" "WAITING(w)" "|" "DONE(d)")
+                            (sequence "|" "CANCELED(c)"))
+        org-todo-keyword-faces '(("TODO" . "red")
+                                 ("IN_PROGRESS" . "dark orange")
+                                 ("WAITING" . "dark orange")
+                                 ("DONE" . "sea green")
+                                 ("CANCELED" . (:foreground "blue" :weight bold)))
+        org-use-fast-todo-selection t
+        org-tags-exclude-from-inheritance '("project")
+        org-capture-templates
+        (quote (("l" "TIL" entry (file+olp+datetree "~/.emacs.d/org/til.org")
+                 "* %?\n%x%^g")
+                ("i" "TODO: Issue" entry (file org-default-notes-file)
+	         "* TODO %^{description}\n\
+|--------------------|-|
+| Title              |%? |\n\
+| Description        | |\n\
+| Environment        | |\n\
+| Steps to Reproduce | |\n\
+| Expected Result    | |\n\
+| Actual Result      | |\n" :empty-lines 1)
+                ("t" "todo" entry (file org-default-notes-file)
+                 "* TODO %?\n%U\n%a\n%i" :clock-in t :clock-resume t)
+                ("n" "note" entry (file org-default-notes-file)
+                 "* %? :NOTE:\n%U\n%a\n%i" :clock-in t :clock-resume t)
+                ("W" "Link" entry (file+headline org-default-notes-file "Links")
+                 "* %? %:annotation\n%U\n%:annotation")
+                ("c" "Current clocked" entry (clock)
+                 "* %:annotation\n\n#+BEGIN_QUOTE\n%i\n[[%:link][Source]]\n#+END_QUOTE\n\n" :immediate-finish t)
+                ("C" "Current clocked link" entry (clock)
+                 "* %:annotation\n" :immediate-finish t)))
+        org-clock-history-length 64
+        org-clock-in-resume t
+        org-clock-into-drawer t
+        org-clock-out-remove-zero-time-clocks t
+        org-clock-out-when-done t
+        org-clock-persist t
+        org-clock-persist-query-resume nil
+        org-clock-auto-clock-resolution (quote when-no-clock-is-running)
+        org-clock-report-include-clocking-task t
+        org-startup-indented t
+        org-log-done t
+        org-confirm-babel-evaluate nil
+        org-fontify-done-headline t
+        org-fontify-whole-heading-line t
+        org-fontify-quote-and-verse-blocks t
+        org-image-actual-width '(700) ;; Set image width to 700
+        org-src-tab-acts-natively t
+        org-export-with-sub-superscripts nil
+        org-startup-folded t)
   
 (add-hook 'org-mode-hook #'(lambda ()
                              (add-to-list 'er/try-expand-list 'er/mark-org-table-cell)))
@@ -738,6 +752,7 @@ emacsclient the buffer is opened in a new frame."
 
 (use-package eshell
   :ensure nil
+  :defines (eshell-mode-map eshell-visual-options eshell-visual-subcommands)
   :init
   (declare-function eshell/pwd "pwd" ())
   (setq eshell-prompt-regexp "┗━━ \\$ "

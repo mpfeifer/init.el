@@ -39,7 +39,7 @@
  '(org-confirm-babel-evaluate nil)
  '(org-plantuml-jar-path nil) ;; TODO
  '(package-selected-packages
-   '(gcmh org moccur-edit color-moccur fill-column-indicator vertico vergico graphviz-dot-mode projectile org-babel edit-list plantuml-mode markdown-live-preview markdown-preview-mode markdown-mode org-beautify-theme org-ai company-mode avy diminish fringe web-beautify web-mode prettier-js git-gutter-fringe git-gutter magit elisp-mode ahk-mode solarized-theme expand-region counsel swiper benchmark-init rainbow-delimiters smartparens yasnippet-snippets yasnippet company js2-mode json-mode all-the-icons all-the-icons-dired all-the-icons-ibuffer all-the-icons-ivy-rich ivy ivy-avy tree-sitter tree-sitter-langs treemacs typescript-mode immaterial-theme material-theme theme-changer timu-rouge-theme tide use-package))
+   '(gcmh org moccur-edit color-moccur vertico vergico graphviz-dot-mode projectile org-babel edit-list plantuml-mode markdown-live-preview markdown-preview-mode markdown-mode org-beautify-theme org-ai company-mode avy diminish fringe web-beautify web-mode prettier-js git-gutter-fringe git-gutter magit elisp-mode ahk-mode solarized-theme expand-region counsel swiper benchmark-init rainbow-delimiters smartparens yasnippet-snippets yasnippet company js2-mode json-mode all-the-icons all-the-icons-dired all-the-icons-ibuffer all-the-icons-ivy-rich ivy ivy-avy tree-sitter tree-sitter-langs treemacs typescript-mode immaterial-theme material-theme theme-changer tide use-package))
  '(plantuml-java-command nil) ;; TODO
  '(safe-local-variable-values '((checkdoc-package-keywords-flag)))
  '(warning-suppress-log-types '((comp) (comp)))

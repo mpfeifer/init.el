@@ -4,9 +4,6 @@
 
 (package-initialize)
 
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
 (require 'use-package)
 
 (setq custom-file (format "~/.emacs.d/systems/%s/custom.el" (system-name))
@@ -267,7 +264,8 @@ point is in org table."
   (setq flycheck-check-syntax-automatically '(save mode-enabled))
   (eldoc-mode +1)
   (tide-hl-identifier-mode +1)
-  (company-mode +1))
+  (company-mode +1)
+  (local-set-key (kbd "C-c c") 'change-case))
 
 (use-package typescript-mode
   :hook ((typescript-mode . setup-tide-mode)
@@ -327,9 +325,12 @@ point is in org table."
   (server-start)
   (add-hook 'server-visit-hook 'open-buffer-in-new-frame))
 
-(use-package prog-mode
-  :hook ((prog-mode-hook . electric-pair-mode))
-  :ensure nil)
+;; TODO formerly prog-mode need to be fiddled in into "prog modes"
+;; electric-pair-mode
+;; change-key
+;; smartparens-mode
+;; rainbox-delimiters
+;; git-gutter-mode
 
 (defun elisp-post-processor ()
   (interactive)
@@ -462,13 +463,7 @@ point is in org table."
   :config
   (mood-line-mode))
 
-(use-package smartparens
-  :after (prog-mode)
-  :hook ((prog-mode-hook . smartparens-mode)))
-
-(use-package rainbow-delimiters
-  :config
-  (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+(use-package smartparens)
 
 (defun open-buffer-in-new-frame ()
   "Function to extend server-visit-hook. If buffer was opened via
@@ -531,7 +526,6 @@ emacsclient the buffer is opened in a new frame."
   :bind ("C-c g" . magit-status))
 
 (use-package git-gutter
-  :hook (prog-mode . git-gutter-mode)
   :config
   (setq git-gutter:update-interval 0.02))
 
@@ -597,6 +591,7 @@ emacsclient the buffer is opened in a new frame."
 (use-package org
   :after (company expand-region)
   :hook (org-mode . company-mode-off)
+  :defines (org-clock-goto org-clock-in)
   :bind
   ("<f12>" . 'org-agenda)
   ("<f10>" . 'org-clock-goto)
@@ -780,3 +775,9 @@ emacsclient the buffer is opened in a new frame."
   :bind (("C-/" . comment-region)
          ("C-M-/" . uncomment-region))
   :ensure nil)
+
+(use-package change-case
+  :ensure nil)
+
+
+  

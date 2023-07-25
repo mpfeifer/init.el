@@ -1,4 +1,5 @@
-;; (toggle-debug-on-error)
+
+(toggle-debug-on-error)
 
 (defvar mpx-system-local-dir "~/.emacs.d" "Directory path for storing local system related files.")
 
@@ -6,11 +7,16 @@
 
 (require 'use-package)
 
+;; todo: move to ~/.emacs.d/custom/
 (setq custom-file (format "~/.emacs.d/systems/%s/custom.el" (system-name))
       package-enable-at-startup nil
       use-package-always-ensure t)
 
 (load custom-file)
+
+;; load system specific settings
+;; todo: move to ~/.emacs.d/custom/
+(load-file (format"~/.emacs.d/systems/%s/host-init.el" (system-name)))
 
 (defun package-list-packages-new-frame ()
   (interactive)
@@ -39,15 +45,15 @@
   :init
   (setq gc-cons-threshold (* 80 1024 1024)
         gcmh-verbose t)
-  :hook 
+  :hook
   (emacs-startup . gcmh-mode))
 
 (use-package expand-region
   :bind (("C-+" . er/expand-region)
-         ("C-*" . er/contract-region))
+         ("C-*" . er/contract-region)
+         ("C-M-SPC" . er/expand-region))
   :defines (er/mark-html-tag-content er/mark-html-tag-content-with-tag er/mark-org-table-cell)
   :init
-
   (defun er--inside-org-table-p ()
     "Check via text properties. If 2nd element equals org-table assume
 point is in org table."
@@ -135,7 +141,7 @@ point is in org table."
 
 (use-package replace
   :ensure nil
-  ;;  :hook ((occur-mode-hook . hl-line-mode))
+  ;;  :hook ((occur-mode . hl-line-mode))
   :bind (("C-c o" . occur))
   :init
   (add-to-list 'display-buffer-alist
@@ -164,7 +170,7 @@ point is in org table."
   :ensure nil
   :bind (("<f4>" . mp-find-config)
          ("M-Z" . zap-up-to-char))
-  :hook ((before-save-hook . delete-trailing-whitespace)
+  :hook ((before-save . delete-trailing-whitespace)
          (clone-indirect-buffer-hook . view-mode))
   :init
   (defun mp-find-config ()
@@ -209,14 +215,44 @@ point is in org table."
   (line-number-mode)
   (column-number-mode))
 
+(use-package ibuffer-git)
+
+(use-package ibuffer-projectile)
+
 (use-package ibuffer
-  :after (all-the-icons-ibuffer)
+  :after (all-the-icons-ibuffer ibuffer-git ibuffer-projectile)
   :bind (("C-x C-b" . ibuffer))
   :ensure nil
-  :hook (ibuffer . all-the-icons-ibuffer)
-  :hook (ibuffer . hl-line-mode)
+  :hook (ibuffer-mode . all-the-icons-ibuffer-mode)
+  :hook (ibuffer-mode . hl-line-mode)
   :init
-  (add-to-list 'display-buffer-alist '("*Ibuffer*"  (display-buffer-same-window))))
+  (defun mpx-ibuffer-collapse-all-filter-groups ()
+    "Collapse all filter groups at once"
+    (interactive)
+    (setq ibuffer-hidden-filter-groups
+            (mapcar #'car (ibuffer-current-filter-groups-with-position)))
+      (ibuffer-update nil t))
+  (advice-add #'ibuffer :after #'mpx-ibuffer-collapse-all-filter-groups)
+  (add-to-list 'display-buffer-alist '("*Ibuffer*"  (display-buffer-same-window)))
+  (defun mpx-setup-ibuffer ()
+    (ibuffer-projectile-set-filter-groups)
+    (unless (eq ibuffer-sorting-mode 'alphabetic)
+      (ibuffer-do-sort-by-alphabetic)))
+  (defun mpx-beginning-of-current-line()
+    (move-beginning-of-line 1))
+  (add-hook 'ibuffer-hook #'mpx-setup-ibuffer)
+  (advice-add #'ibuffer-toggle-filter-group :before #'mpx-beginning-of-current-line)
+  (setq ibuffer-formats
+        '((mark modified read-only " "
+                (git-status-mini)
+                " "
+                (name 18 18 :left :elide)
+                " "
+                (size 9 -1 :right)
+                " "
+                (mode 16 16 :left :elide)
+                " "
+                project-relative-file))))
 
 (use-package recentf
   :ensure nil
@@ -269,7 +305,7 @@ point is in org table."
 
 (use-package typescript-mode
   :hook ((typescript-mode . setup-tide-mode)
-         (before-save-hook . tide-format-before-save))
+         (before-save . tide-format-before-save))
   :config
   (setq-default typescript-indent-level 4))
 
@@ -355,7 +391,7 @@ point is in org table."
   :defines (shx-insert-variable shx-find-variables)
   :bind (:map sh-mode-map
               ("$" . 'shx-insert-variable))
-  :hook (sh-mode-hook . sh-mode-setup)
+  :hook (sh-mode . sh-mode-setup)
   :init
 
   (add-to-list 'auto-insert-alist
@@ -411,15 +447,19 @@ point is in org table."
   (setq-default js2-ignored-warnings '("msg.extra.trailing.comma")))
 
 (use-package prettier-js
+  ;; needs npm package
+  :hook (js2-mode . prettier-js-mode)
   :config
   (setq prettier-js-args '(
                            "--trailing-comma" "es5"
                            "--single-quote" "true"
                            "--print-width" "120"
-                           ))
-  (add-hook 'js2-mode-hook 'prettier-js-mode))
+                           )))
+
 
 (use-package json-mode)
+
+(use-package treemacs-all-the-icons)
 
 (use-package treemacs
   :bind (("C-c t t" . treemacs)))
@@ -428,16 +468,11 @@ point is in org table."
 
 ;; (use-package tree-sitter-langs)
 
-
-(use-package lambda-themes
-  :ensure nil)
-
 (use-package lambda-line
   :ensure nil
   :after (lamda-themes))
 
 (use-package theme-changer
-  :after (lambda-theme)
   :defines (change-theme)
   :init
   (setq calendar-latitude 50.775555
@@ -455,9 +490,7 @@ point is in org table."
       (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9"))
   (require 'blue-mood-theme)
   :config
-;;  (change-theme 'blue-mood 'material)
-  (load-theme 'blue-mood)
-)
+  (change-theme 'blue-mood 'material))
 
 (use-package mood-line
   :config
@@ -541,13 +574,13 @@ emacsclient the buffer is opened in a new frame."
 (use-package ahk-mode)
 
 (use-package web-mode
-  :after (expand-region)
+  :after expand-region
   :mode ("\\.html\\'")
   :config
-  (add-hook 'web-mode-hook 
+  (add-hook 'web-mode-hook
             #'(lambda ()
-              (add-to-list 'er/try-expand-list er/mark-html-tag-content-with-tag)
-              (add-to-list 'er/try-expand-list er/mark-html-tag-content)))
+              (add-to-list 'er/try-expand-list 'er/mark-html-tag-content-with-tag)
+              (add-to-list 'er/try-expand-list 'er/mark-html-tag-content)))
   (setq web-mode-markup-indent-offset 2)
   (setq web-mode-engines-alist
         '(("django" . "focus/.*\\.html\\'")
@@ -589,17 +622,15 @@ emacsclient the buffer is opened in a new frame."
   (org-ai-global-mode))
 
 (use-package org
-  :after (company expand-region)
   :hook (org-mode . company-mode-off)
   :defines (org-clock-goto org-clock-in)
-  :bind
-  ("<f12>" . 'org-agenda)
-  ("<f10>" . 'org-clock-goto)
-  ("C-<f10>" . 'org-clock-in)
+  :bind (("<f12>" . 'org-agenda)
+         ("<f10>" . 'org-clock-goto)
+         ("C-<f10>" . 'org-clock-in))
   :config
-  (setq org-default-notes-file "~/Dokumente/inbox.org" ; default refile file
+  (setq org-default-notes-file systems/org-default-notes-file ; default refile file
         org-agenda-span 'day             ; start in day view default
-        org-agenda-files '("~/Dokumente/planner.org")
+        org-agenda-files systems/org-agenda-files
         org-todo-keywords '((sequence "TODO(t)" "INPROGRESS(i)" "WAITING(w)" "|" "DONE(d)")
                             (sequence "|" "CANCELED(c)"))
         org-todo-keyword-faces '(("TODO" . "red")
@@ -610,10 +641,10 @@ emacsclient the buffer is opened in a new frame."
         org-use-fast-todo-selection t
         org-tags-exclude-from-inheritance '("project")
         org-capture-templates
-        (quote (("l" "TIL" entry (file+olp+datetree "~/.emacs.d/org/til.org")
-                 "* %?\n%x%^g")
-                ("i" "TODO: Issue" entry (file org-default-notes-file)
-	         "* TODO %^{description}\n\
+        `(("l" "TIL" entry (file+olp+datetree ,systems/org-til-file)
+           "* %?\n%x%^g")
+          ("i" "TODO: Issue" entry (file org-default-notes-file)
+	   "* TODO %^{description}\n\
 |--------------------|-|
 | Title              |%? |\n\
 | Description        | |\n\
@@ -621,16 +652,16 @@ emacsclient the buffer is opened in a new frame."
 | Steps to Reproduce | |\n\
 | Expected Result    | |\n\
 | Actual Result      | |\n" :empty-lines 1)
-                ("t" "todo" entry (file org-default-notes-file)
-                 "* TODO %?\n%U\n%a\n%i" :clock-in t :clock-resume t)
-                ("n" "note" entry (file org-default-notes-file)
-                 "* %? :NOTE:\n%U\n%a\n%i" :clock-in t :clock-resume t)
-                ("W" "Link" entry (file+headline org-default-notes-file "Links")
-                 "* %? %:annotation\n%U\n%:annotation")
-                ("c" "Current clocked" entry (clock)
-                 "* %:annotation\n\n#+BEGIN_QUOTE\n%i\n[[%:link][Source]]\n#+END_QUOTE\n\n" :immediate-finish t)
-                ("C" "Current clocked link" entry (clock)
-                 "* %:annotation\n" :immediate-finish t)))
+          ("t" "todo" entry (file org-default-notes-file)
+           "* TODO %?\n%U\n%a\n%i" :clock-in t :clock-resume t)
+          ("n" "note" entry (file org-default-notes-file)
+           "* %? :NOTE:\n%U\n%a\n%i" :clock-in t :clock-resume t)
+          ("W" "Link" entry (file+headline org-default-notes-file "Links")
+           "* %? %:annotation\n%U\n%:annotation")
+          ("c" "Current clocked" entry (clock)
+           "* %:annotation\n\n#+BEGIN_QUOTE\n%i\n[[%:link][Source]]\n#+END_QUOTE\n\n" :immediate-finish t)
+          ("C" "Current clocked link" entry (clock)
+           "* %:annotation\n" :immediate-finish t))
         org-clock-history-length 64
         org-clock-in-resume t
         org-clock-into-drawer t
@@ -650,9 +681,7 @@ emacsclient the buffer is opened in a new frame."
         org-src-tab-acts-natively t
         org-export-with-sub-superscripts nil
         org-startup-folded t)
-  
-(add-hook 'org-mode-hook #'(lambda ()
-                             (add-to-list 'er/try-expand-list 'er/mark-org-table-cell)))
+
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)
@@ -723,6 +752,7 @@ emacsclient the buffer is opened in a new frame."
     (info nil (generate-new-buffer-name "*info*"))))
 
 (use-package scratchy
+  :after (hydra)
   :ensure nil)
 
 (use-package hydra)
@@ -731,9 +761,6 @@ emacsclient the buffer is opened in a new frame."
   :ensure nil
   :init
   (add-standard-display-buffer-entry "*Help*"))
-
-;; load system specific settings
-(load-file (format"~/.emacs.d/systems/%s/host-init.el" (system-name)))
 
 (use-package auto-mark
   :ensure nil
@@ -779,5 +806,7 @@ emacsclient the buffer is opened in a new frame."
 (use-package change-case
   :ensure nil)
 
-
-  
+(use-package elec-pair
+  :ensure nil
+  :init
+  (electric-pair-mode))

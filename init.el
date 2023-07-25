@@ -472,14 +472,16 @@ point is in org table."
   :ensure nil
   :after (lamda-themes))
 
+(use-package solarized-theme)
+
 (use-package theme-changer
+  :after (solarized-theme)
   :defines (change-theme)
   :init
   (setq calendar-latitude 50.775555
         calendar-longitude 6.083611
         calendar-location-name "Aachen")
-  (use-package material-theme)
-  (use-package solarized-theme)
+
     :config
     (let ((line (face-attribute 'mode-line :underline)))
       (set-face-attribute 'mode-line          nil :overline   line)
@@ -488,9 +490,8 @@ point is in org table."
       (set-face-attribute 'mode-line          nil :box        nil)
       (set-face-attribute 'mode-line-inactive nil :box        nil)
       (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9"))
-  (require 'blue-mood-theme)
   :config
-  (change-theme 'blue-mood 'material))
+  (change-theme 'solarized-light 'solarized-dark))
 
 (use-package mood-line
   :config

@@ -130,18 +130,31 @@ point is in org table."
   :ensure nil
   :after (replace)
   :bind (:map isearch-mode-map
-              ("C-o" . isearch-occur))
+              ("C-o" . isearch-occur)
+              ("C-." . mpx-isearch-yank-region-or-symbol-at-point)
+              ("C-<" . isearch-beginning-of-buffer)
+              ("C->" . isearch-end-of-buffer))
+
   :init
-  (setq isearch-lazy-count t)
+  (setq isearch-lazy-count t
+        isearch-lazy-highlight t)
+
+  (defun mpx-isearch-symbol-at-point ()
+    "See function name."
+    (interactive)
+    (isearch-yank-string (symbol-to-string (symbol-at-point))))
+
   (defun isearch-occur ()
     "Invoke `occur' from within isearch."
     (interactive)
     (let ((case-fold-search isearch-case-fold-search))
-      (occur (if isearch-regexp isearch-string (regexp-quote isearch-string))))))
+      (occur (if isearch-regexp
+                 isearch-string
+               (regexp-quote isearch-string))))))
 
 (use-package replace
   :ensure nil
-  ;;  :hook ((occur-mode . hl-line-mode))
+  :hook ((occur-mode . hl-line-mode))
   :bind (("C-c o" . occur))
   :init
   (add-to-list 'display-buffer-alist

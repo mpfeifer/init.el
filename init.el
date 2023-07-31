@@ -696,6 +696,14 @@ emacsclient the buffer is opened in a new frame."
         org-export-with-sub-superscripts nil
         org-startup-folded t)
 
+  (defun mpx-org-capture-external ()
+    "Call org-capture using the full frame"
+    (interactive "")
+    (let ((display-buffer-alist '(("*Org Select*"
+                                   (display-buffer-full-frame))
+                                  )))
+      (org-capture)))
+
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)

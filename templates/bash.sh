@@ -22,6 +22,18 @@ while getopts "ha:" o; do
     esac
 done
 
+do_something
+
+if [ $? -eq 0 ] ; then
+        printf "Yes or no? [Y/N]: %s"
+        read -r res
+        if [ "$res" == "Y" ];then
+            echo yes
+        else
+            echo no
+        fi
+fi
+
 exit 0
 
 ################

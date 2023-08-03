@@ -1,12 +1,20 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 
 #
 # Author: Matthias
 #
 
-EMACSCLIENT=/usr/local/bin/emacsclient
+ps axf | grep -v grep | grep -q '/usr/local/bin/emacs'
 
-${EMACSCLIENT} -e '(make-frame)'
+echo ${?}
+
+if [[ $? -eq 1 ]] ;
+then
+    emacs &
+else
+    EMACSCLIENT=/usr/local/bin/emacsclient
+    ${EMACSCLIENT} -e '(make-frame)'
+fi
 
 ################
 #              #

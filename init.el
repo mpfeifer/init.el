@@ -317,8 +317,8 @@ point is in org table."
   (local-set-key (kbd "C-c c") 'change-case))
 
 (use-package typescript-mode
-  :hook ((typescript-mode . setup-tide-mode)
-         (before-save . tide-format-before-save))
+  :hook ((typescript-mode . setup-tide-mode))
+;;         (before-save . tide-format-before-save))
   :config
   (setq-default typescript-indent-level 4))
 
@@ -696,7 +696,7 @@ emacsclient the buffer is opened in a new frame."
         org-export-with-sub-superscripts nil
         org-startup-folded t)
 
-  (defun mpx-org-capture-external ()
+  (defun mpx-org-capture-full-frame ()
     "Call org-capture using the full frame"
     (interactive "")
     (let ((display-buffer-alist '(("*Org Select*"

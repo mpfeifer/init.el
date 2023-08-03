@@ -1,0 +1,13 @@
+# -*- mode: snippet -*-
+# name: query
+# key: query
+# --
+if [ $? -eq 0 ] ; then
+        printf "Yes or no? [Y/N]: %s"
+        read -r res
+        if [ "$res" == "Y" ];then
+            echo yes
+        else
+            echo no
+        fi
+fi

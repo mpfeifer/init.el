@@ -1,14 +1,20 @@
+;;; init.el --- Emacs initialization
+;;; Commentary:
+;;;
+;;; Unordered pile of parenthesis
+;;;
+;;; Code:
 
-(toggle-debug-on-error)
+;; (toggle-debug-on-error)
 
-(defvar mpx-system-local-dir "~/.emacs.d" "Directory path for storing local system related files.")
+(defvar mpx-system-temp-dir "~/.emacs.d/temp" "Directory path for storing local system related files.")
 
 (package-initialize)
 
 (require 'use-package)
 
 ;; todo: move to ~/.emacs.d/custom/
-(setq custom-file (format "~/.emacs.d/systems/%s/custom.el" (system-name))
+(setq custom-file (format "~/.emacs.d/custom.el")
       package-enable-at-startup nil
       use-package-always-ensure t)
 
@@ -16,9 +22,10 @@
 
 ;; load system specific settings
 ;; todo: move to ~/.emacs.d/custom/
-(load-file (format"~/.emacs.d/systems/%s/host-init.el" (system-name)))
+(load-file (format"~/.emacs.d/elisp/host-init-%s.el" (system-name)))
 
 (defun package-list-packages-new-frame ()
+  "Run package-list-packges in a newly created frame."
   (interactive)
   (select-frame (new-frame))
   (package-list-packages))
@@ -42,9 +49,9 @@
   (benchmark-init/activate))
 
 (use-package gcmh
-  :init
-  (setq gc-cons-threshold (* 80 1024 1024)
-        gcmh-verbose t)
+  :custom
+  (gc-cons-threshold (* 80 1024 1024))
+  (gcmh-verbose t)
   :hook
   (emacs-startup . gcmh-mode))
 
@@ -52,7 +59,7 @@
   :bind (("C-+" . er/expand-region)
          ("C-*" . er/contract-region)
          ("C-M-SPC" . er/expand-region))
-  :defines (er/mark-html-tag-content er/mark-html-tag-content-with-tag er/mark-org-table-cell)
+  :defines (er/mark-html-tag-content er/mark-html-tag-content-with-tag er/mark-org-table-cell er--inside-org-table-p)
   :init
   (defun er--inside-org-table-p ()
     "Check via text properties. If 2nd element equals org-table assume
@@ -180,6 +187,7 @@ point is in org table."
   :after emacs)
 
 (use-package emacs
+  :defines(mp-find-config symbol-to-string string-to-symbol)
   :ensure nil
   :bind (("<f4>" . mp-find-config)
          ("M-Z" . zap-up-to-char))
@@ -243,8 +251,8 @@ point is in org table."
     "Collapse all filter groups at once"
     (interactive)
     (setq ibuffer-hidden-filter-groups
-            (mapcar #'car (ibuffer-current-filter-groups-with-position)))
-      (ibuffer-update nil t))
+          (mapcar #'car (ibuffer-current-filter-groups-with-position)))
+    (ibuffer-update nil t))
   (advice-add #'ibuffer :after #'mpx-ibuffer-collapse-all-filter-groups)
   (add-to-list 'display-buffer-alist '("*Ibuffer*"  (display-buffer-same-window)))
   (defun mpx-setup-ibuffer ()
@@ -269,8 +277,9 @@ point is in org table."
 
 (use-package recentf
   :ensure nil
+  :custom
+  (recentf-save-file (format "%s/recentf" mpx-system-temp-dir))
   :init
-  (setq recentf-save-file (format "%s/recentf" mpx-system-local-dir))
   (recentf-mode))
 
 (defun add-standard-display-buffer-entry (name)
@@ -291,6 +300,8 @@ point is in org table."
 
 (use-package savehist
   :ensure nil
+  :custom
+  (savehist-file (format "%s/history" mpx-system-temp-dir))
   :init
   (savehist-mode))
 
@@ -318,7 +329,9 @@ point is in org table."
 
 (use-package typescript-mode
   :hook ((typescript-mode . setup-tide-mode))
-;;         (before-save . tide-format-before-save))
+  ;;         (before-save . tide-format-before-save))
+  :custom
+  (typescript-indent-level systems/typescript-indent-level)
   :config
   (setq-default typescript-indent-level 4))
 
@@ -415,9 +428,9 @@ point is in org table."
     (let ((undeclared (re-seq "^\\([0-9a-zA-Z_]+\\)=.*$" (buffer-substring-no-properties (point-min) (point-max)) 1))
           (declared (re-seq "^declare.*[[:space:]]\\([0-9a-zA-Z_]+\\)\\(=.*\\)?$" (buffer-substring-no-properties (point-min) (point-max)) 1))
           (forvars (re-seq "^[[:space:]]*for \\([0-9a-zA-Z_]+\\)[[:space:]]in[[:space:]].*$" (buffer-substring-no-properties (point-min) (point-max)) 1)))
-      (sort (append declared undeclared forvars) 'string<)))
+      (delq nil (delete-dups (sort (append declared undeclared forvars) 'string<)))))
 
-  (defconst shx-bash-builtin-variables (list "BASH" "BASHOPTS" "BASHPID" "BASH_ALIASES" "BASH_ARGC" "BASH_ARGV" "BASH_CMDS" "BASH_COMMAND" "BASH_EXECUTION_STRING" "BASH_LINENO" "BASH_LOADABLES_PATH" "BASH_REMATCH" "BASH_SOURCE" "BASH_SUBSHELL" "BASH_VERSINFO" "BASH_VERSION" "COMP_CWORD" "COMP_KEY" "COMP_LINE" "COMP_POINT" "COMP_TYPE" "COMP_WORDBREAKS" "COMP_WORDS" "COPROC" "DIRSTACK" "EUID" "FUNCNAME" "GROUPS" "HISTCMD" "HOSTNAME" "HOSTTYPE" "LINENO" "MACHTYPE" "MAPFILE" "OLDPWD" "OPTARG" "OPTIND" "OSTYPE" "PIPESTATUS" "PPID" "PWD" "RANDOM" "READLINE_LINE" "READLINE_POINT" "REPLY" "SECONDS" "SHELLOPTS" "SHLVL" "UID" "BASH_COMPAT" "BASH_ENV" "BASH_XTRACEFD" "CDPATH" "CHILD_MAX" "COLUMNS" "COMPREPLY" "EMACS" "ENV" "EXECIGNORE" "FCEDIT" "FIGNORE" "FUNCNEST" "GLOBIGNORE" "HISTCONTROL" "HISTFILE" "HISTIGNORE" "HISTSIZE" "HISTTIMEFORMAT" "HOME" "HOSTFILE" "IFS" "IGNOREEOF" "INPUTRC" "LANG" "LC_ALL" "LC_COLLATE" "LC_CTYPE" "LC_MESSAGES" "LC_NUMERIC" "LC_TIME" "LINES" "MAIL" "MAILCHECK" "MAILPATH" "OPTERR" "PATH" "POSIXLY_CORRECT" "PROMPT_COMMAND" "PROMPT_DIRTRIM" "PS0" "PS1" "PS2" "PS3" "PS4" "SHELL" "TIMEFORMAT" "TMOUT" "TMPDIR" "auto_resume" "histchars"))
+  (defconst shx-bash-builtin-variables (list "?" "BASH" "BASHOPTS" "BASHPID" "BASH_ALIASES" "BASH_ARGC" "BASH_ARGV" "BASH_CMDS" "BASH_COMMAND" "BASH_EXECUTION_STRING" "BASH_LINENO" "BASH_LOADABLES_PATH" "BASH_REMATCH" "BASH_SOURCE" "BASH_SUBSHELL" "BASH_VERSINFO" "BASH_VERSION" "COMP_CWORD" "COMP_KEY" "COMP_LINE" "COMP_POINT" "COMP_TYPE" "COMP_WORDBREAKS" "COMP_WORDS" "COPROC" "DIRSTACK" "EUID" "FUNCNAME" "GROUPS" "HISTCMD" "HOSTNAME" "HOSTTYPE" "LINENO" "MACHTYPE" "MAPFILE" "OLDPWD" "OPTARG" "OPTIND" "OSTYPE" "PIPESTATUS" "PPID" "PWD" "RANDOM" "READLINE_LINE" "READLINE_POINT" "REPLY" "SECONDS" "SHELLOPTS" "SHLVL" "UID" "BASH_COMPAT" "BASH_ENV" "BASH_XTRACEFD" "CDPATH" "CHILD_MAX" "COLUMNS" "COMPREPLY" "EMACS" "ENV" "EXECIGNORE" "FCEDIT" "FIGNORE" "FUNCNEST" "GLOBIGNORE" "HISTCONTROL" "HISTFILE" "HISTIGNORE" "HISTSIZE" "HISTTIMEFORMAT" "HOME" "HOSTFILE" "IFS" "IGNOREEOF" "INPUTRC" "LANG" "LC_ALL" "LC_COLLATE" "LC_CTYPE" "LC_MESSAGES" "LC_NUMERIC" "LC_TIME" "LINES" "MAIL" "MAILCHECK" "MAILPATH" "OPTERR" "PATH" "POSIXLY_CORRECT" "PROMPT_COMMAND" "PROMPT_DIRTRIM" "PS0" "PS1" "PS2" "PS3" "PS4" "SHELL" "TIMEFORMAT" "TMOUT" "TMPDIR" "auto_resume" "histchars"))
 
   (defun shx-insert-variable ()
     "Ask user for variable (built-in variable + user defined ones). Does not respect
@@ -487,22 +500,37 @@ point is in org table."
 
 (use-package solarized-theme)
 
-(use-package theme-changer
-  :after (solarized-theme)
-  :defines (change-theme)
-  :init
-  (setq calendar-latitude 50.775555
-        calendar-longitude 6.083611
-        calendar-location-name "Aachen")
+(use-package calendar
+  :ensure nil
+  :custom
+  (calendar-mark-holidays-flag t)
+  (calendar-date-style 'iso)
+  (diary-file "~/Dokumente/diary"))
 
-    :config
-    (let ((line (face-attribute 'mode-line :underline)))
-      (set-face-attribute 'mode-line          nil :overline   line)
-      (set-face-attribute 'mode-line-inactive nil :overline   line)
-      (set-face-attribute 'mode-line-inactive nil :underline  line)
-      (set-face-attribute 'mode-line          nil :box        nil)
-      (set-face-attribute 'mode-line-inactive nil :box        nil)
-      (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9"))
+(use-package cal-dst
+  :ensure nil
+  :custom
+  (calendar-daylight-time-zone-name "CEST")
+  (calendar-standard-time-zone-name "CET"))
+
+(use-package solar
+  :ensure nil
+  :custom
+  (calendar-latitude 50.775555)
+  (calendar-longitude 6.083611)
+  (calendar-location-name "Aachen"))
+
+(use-package theme-changer
+  :after (solarized-theme solar)
+  :defines (change-theme)
+  :config
+  (let ((line (face-attribute 'mode-line :underline)))
+    (set-face-attribute 'mode-line          nil :overline   line)
+    (set-face-attribute 'mode-line-inactive nil :overline   line)
+    (set-face-attribute 'mode-line-inactive nil :underline  line)
+    (set-face-attribute 'mode-line          nil :box        nil)
+    (set-face-attribute 'mode-line-inactive nil :box        nil)
+    (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9"))
   :config
   (change-theme 'solarized-light 'solarized-dark))
 
@@ -513,8 +541,8 @@ point is in org table."
 (use-package smartparens)
 
 (defun open-buffer-in-new-frame ()
-  "Function to extend server-visit-hook. If buffer was opened via
-emacsclient the buffer is opened in a new frame."
+  "Function to extend server-visit-hook.
+If buffer was opened via emacsclient the buffer is opened in a new frame."
   (let ((buffer-from-emacsclient (current-buffer)))
     (when server-process
       (let ((pop-up-frames t))
@@ -522,11 +550,11 @@ emacsclient the buffer is opened in a new frame."
       (set-window-buffer nil buffer-from-emacsclient))))
 
 (defun imenu-add-to-menubar-0 ()
-  "Add imenu to menubar with menu name \"Imenu\""
+  "Add imenu to menubar with menu name \"Imenu\"."
   (imenu-add-to-menubar "Imenu"))
 
 (defun mpx-abracadabra-el ()
-  "Handle C-c C-c in emacs-lisp mode."
+  "Try to do what suitable for context of current point."
   (interactive)
   (let* ((thing (thing-at-point 'symbol t))
          (things-value (symbol-value (intern thing))))
@@ -538,16 +566,38 @@ emacsclient the buffer is opened in a new frame."
   (if (file-exists-p (byte-compile-dest-file buffer-file-name))
       (byte-compile-file buffer-file-name)))
 
+(defun mpx-imenu-functions ()
+  "Call imenu with `imenu-generic-expression` set for finding functions."
+  (interactive)
+  (let ((imenu-generic-expression
+         '((nil "^.*([[:space:]]*defun[[:space:]]+\\([[:word:]-/]+\\)" 1))))
+    (imenu-flush-cache)
+    (call-interactively 'imenu)))
+
+(defun mpx-imenu-use-package ()
+  "Call imenu.
+Have `imenu-generic-expression` set for finding use-pacakge declerations."
+  (interactive)
+  (let ((imenu-generic-expression
+         '((nil "^.*([[:space:]]*use-package[[:space:]]+\\([[:word:]-]+\\)" 1))))
+    (imenu-flush-cache)
+    (call-interactively 'imenu)))
+
 (defun mpx-setup-emacs-lisp-mode ()
+  "Setup Emacs Lisp mode from the."
   (company-mode +1)
-  (imenu-add-to-menubar-0)
+  (flycheck-mode)
   (make-local-variable 'after-save-hook)
   (add-hook 'after-save-hook 'mpx-recompile-elc-on-save))
 
 (use-package elisp-mode
   :hook (emacs-lisp-mode . mpx-setup-emacs-lisp-mode)
+  :custom (imenu-sort-function imenu--sort-by-name)
   :bind (:map emacs-lisp-mode-map
               ("C-c C-c" . mpx-abracadabra-el))
+  :init
+  (local-set-key (kbd "C-c C-i f") 'mpx-imenu-functions)
+  (local-set-key (kbd "C-c C-i u") 'mpx-imenu-use-package)
   :ensure nil)
 
 (use-package projectile
@@ -564,6 +614,7 @@ emacsclient the buffer is opened in a new frame."
   :custom
   (projectile-auto-discover nil)
   (projectile-completion-system 'ivy)
+  (projectile-project-search-path systems/projectile-project-search-path)
   :config
   (add-to-list 'projectile-globally-ignored-directories "node_modules")
   (add-to-list 'projectile-globally-ignored-directories "dist")
@@ -573,16 +624,16 @@ emacsclient the buffer is opened in a new frame."
   :bind ("C-c g" . magit-status))
 
 (use-package git-gutter
-  :config
-  (setq git-gutter:update-interval 0.02))
+  :custom
+  (git-gutter:update-interval 0.02))
 
 (use-package fringe
   :ensure nil
-  :config
+  :custom
   (fringe-mode (cons 16 0)))
 
 (use-package git-gutter-fringe
-  :config
+  :custom
   (global-git-gutter-mode t))
 
 (use-package ahk-mode)
@@ -590,15 +641,14 @@ emacsclient the buffer is opened in a new frame."
 (use-package web-mode
   :after expand-region
   :mode ("\\.html\\'")
+  :custom
+  (web-mode-markup-indent-offset systems/web-mode-markup-indent-offset)
   :config
   (add-hook 'web-mode-hook
             #'(lambda ()
-              (add-to-list 'er/try-expand-list 'er/mark-html-tag-content-with-tag)
-              (add-to-list 'er/try-expand-list 'er/mark-html-tag-content)))
-  (setq web-mode-markup-indent-offset 2)
-  (setq web-mode-engines-alist
-        '(("django" . "focus/.*\\.html\\'")
-          ("ctemplate" . "realtimecrm/.*\\.html\\'"))))
+                (add-to-list 'er/try-expand-list 'er/mark-html-tag-content-with-tag)
+                (add-to-list 'er/try-expand-list 'er/mark-html-tag-content))))
+
 
 (use-package web-beautify
   :bind (:map web-mode-map
@@ -640,42 +690,31 @@ emacsclient the buffer is opened in a new frame."
   :defines (org-clock-goto org-clock-in)
   :bind (("<f12>" . 'org-agenda)
          ("<f10>" . 'org-clock-goto)
-         ("C-<f10>" . 'org-clock-in))
+         ("C-<f10>" . 'org-clock-in)
+         ("M-C-<f10>" . 'org-clock-out))
   :config
-  (setq org-default-notes-file systems/org-default-notes-file ; default refile file
-        org-agenda-span 'day             ; start in day view default
-        org-agenda-files systems/org-agenda-files
-        org-todo-keywords '((sequence "TODO(t)" "INPROGRESS(i)" "WAITING(w)" "|" "DONE(d)")
-                            (sequence "|" "CANCELED(c)"))
+  (setq org-default-notes-file systems/org-default-notes-file
+        org-agenda-span 'day
+        org-agenda-files `(,systems/org-agenda-file ,systems/org-projects-file ,systems/org-jira-file)
+        org-todo-keywords '((sequence "TODO(t)" "INPROGRESS(i)" "WAITING(w)" "|" "DONE(d)"))
         org-todo-keyword-faces '(("TODO" . "red")
                                  ("IN_PROGRESS" . "dark orange")
                                  ("WAITING" . "dark orange")
-                                 ("DONE" . "sea green")
-                                 ("CANCELED" . (:foreground "blue" :weight bold)))
+                                 ("DONE" . "sea green"))
         org-use-fast-todo-selection t
         org-tags-exclude-from-inheritance '("project")
         org-capture-templates
         `(("l" "TIL" entry (file+olp+datetree ,systems/org-til-file)
            "* %?\n%x%^g")
-          ("i" "TODO: Issue" entry (file org-default-notes-file)
-	   "* TODO %^{description}\n\
-|--------------------|-|
-| Title              |%? |\n\
-| Description        | |\n\
-| Environment        | |\n\
-| Steps to Reproduce | |\n\
-| Expected Result    | |\n\
-| Actual Result      | |\n" :empty-lines 1)
-          ("t" "todo" entry (file org-default-notes-file)
-           "* TODO %?\n%U\n%a\n%i" :clock-in t :clock-resume t)
-          ("n" "note" entry (file org-default-notes-file)
-           "* %? :NOTE:\n%U\n%a\n%i" :clock-in t :clock-resume t)
-          ("W" "Link" entry (file+headline org-default-notes-file "Links")
-           "* %? %:annotation\n%U\n%:annotation")
-          ("c" "Current clocked" entry (clock)
-           "* %:annotation\n\n#+BEGIN_QUOTE\n%i\n[[%:link][Source]]\n#+END_QUOTE\n\n" :immediate-finish t)
-          ("C" "Current clocked link" entry (clock)
-           "* %:annotation\n" :immediate-finish t))
+          ("T" "New task" entry ,systems/org-projects-file
+           "* %?")
+          ("t" "Task for clocked project" entry (clock)
+           "** TODO %?")
+          ("b" "Bookmark for clocked project (from x clipboard)" item (function mpx-find-clocked-task-filename) "%x%?")
+          ("B" "Bookmark for clocked project (from region)" item (function mpx-find-clocked-task-filename) "%x%?")
+
+)
+
         org-clock-history-length 64
         org-clock-in-resume t
         org-clock-into-drawer t
@@ -723,6 +762,7 @@ emacsclient the buffer is opened in a new frame."
 (use-package markdown-preview-mode)
 
 (use-package edit-list
+  :defines (edit-list)
   :after elisp-mode)
 
 (use-package shell
@@ -763,6 +803,7 @@ emacsclient the buffer is opened in a new frame."
 
 (use-package info
   :ensure nil
+  :defines (mpx-new-infor-browser)
   :bind (("<f1>" . mpx-new-info-browser)
          ("C-h i" . mpx-new-info-browser))
   :init
@@ -786,30 +827,33 @@ emacsclient the buffer is opened in a new frame."
 
 (use-package auto-mark
   :ensure nil
+  :custom
+  (auto-mark-command-class-alist
+   '((goto-line . jump)
+     (indent-for-tab-command . ignore)
+     (undo . ignore)
+     (tide-jump-to-definition . jump)))
   :config
-  (setq auto-mark-command-class-alist
-        '((goto-line . jump)
-          (indent-for-tab-command . ignore)
-          (undo . ignore)
-          (tide-jump-to-definition . jump)))
   (global-auto-mark-mode 1))
 
 (use-package eshell
   :ensure nil
   :defines (eshell-mode-map eshell-visual-options eshell-visual-subcommands)
+  :custom
+  (eshell-prompt-regexp "┗━━ \\$ ")
+  (eshell-prompt-function (lambda nil
+                            (concat "\n┏━ "
+                                    (user-login-name) "@" (system-name) ":"
+                                    (propertize (if (string= (eshell/pwd) (getenv "HOME"))
+                                                    "~"
+                                                  (replace-regexp-in-string
+                                                   (concat "^" (getenv "HOME")) "~" (eshell/pwd)))
+                                                'face `(:foreground "orange red"))
+                                    "\n┗━━ "
+                                    (if (= (user-uid) 0) "# " "$ "))))
   :init
   (declare-function eshell/pwd "pwd" ())
-  (setq eshell-prompt-regexp "┗━━ \\$ "
-        eshell-prompt-function (lambda nil
-                                 (concat "\n┏━ "
-                                         (user-login-name) "@" (system-name) ":"
-                                         (propertize (if (string= (eshell/pwd) (getenv "HOME"))
-                                                         "~"
-                                                       (replace-regexp-in-string
-                                                        (concat "^" (getenv "HOME")) "~" (eshell/pwd)))
-                                                     'face `(:foreground "orange red"))
-                                         "\n┗━━ "
-                                         (if (= (user-uid) 0) "# " "$ "))))
+
   (add-hook 'eshell-mode-hook 'company-mode)
   (add-hook 'eshell-mode-hook (lambda ()
 			        (define-key eshell-mode-map (kbd "<tab>") 'company-complete)
@@ -832,3 +876,6 @@ emacsclient the buffer is opened in a new frame."
   :ensure nil
   :init
   (electric-pair-mode))
+
+(provide 'init)
+;;; init.el ends here

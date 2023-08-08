@@ -18,3 +18,4 @@ eshell/
 host-init*
 temp/
 tramp
+custom.el

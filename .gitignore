@@ -15,3 +15,6 @@ bookmarks
 projects
 org/
 eshell/
+host-init*
+temp/
+tramp

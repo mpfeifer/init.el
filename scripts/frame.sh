@@ -6,8 +6,6 @@
 
 ps axf | grep -v grep | grep -q '/usr/local/bin/emacs'
 
-echo ${?}
-
 if [[ $? -eq 1 ]] ;
 then
     emacs &

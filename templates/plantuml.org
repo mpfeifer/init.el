@@ -280,6 +280,3 @@ title My super title
 --- Windows 8
 --- Windows 10
 #+end_src
-
-#+RESULTS:
-[[file:/home/mpfeifer/Dokumente/mindmap.png]]

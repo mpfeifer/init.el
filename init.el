@@ -590,12 +590,17 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
   (make-local-variable 'after-save-hook)
   (add-hook 'after-save-hook 'mpx-recompile-elc-on-save))
 
+(use-package imenu
+  :ensure nil
+  :custom (imenu-sort-function imenu--sort-by-name))
+
 (use-package elisp-mode
+  :after (imenu)
   :hook (emacs-lisp-mode . mpx-setup-emacs-lisp-mode)
-  :custom (imenu-sort-function imenu--sort-by-name)
+
   :bind (:map emacs-lisp-mode-map
               ("C-c C-c" . mpx-abracadabra-el))
-  :init
+  :config
   (local-set-key (kbd "C-c C-i f") 'mpx-imenu-functions)
   (local-set-key (kbd "C-c C-i u") 'mpx-imenu-use-package)
   :ensure nil)

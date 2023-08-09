@@ -592,7 +592,7 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
 
 (use-package imenu
   :ensure nil
-  :custom (imenu-sort-function imenu--sort-by-name))
+  :custom (imenu-sort-function 'imenu--sort-by-name))
 
 (use-package elisp-mode
   :after (imenu)
@@ -698,6 +698,14 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
          ("C-<f10>" . 'org-clock-in)
          ("M-C-<f10>" . 'org-clock-out))
   :config
+
+  (defun mpx-find-clocked-task-filename ()
+    "Open file that has task with org clock running."
+    (interactive)
+    (org-clock-goto)
+    (search-forward "** Bookmarks")
+    (org-return))
+
   (setq org-default-notes-file systems/org-default-notes-file
         org-agenda-span 'day
         org-agenda-files `(,systems/org-agenda-file ,systems/org-projects-file ,systems/org-jira-file)
@@ -717,9 +725,7 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
            "** TODO %?")
           ("b" "Bookmark for clocked project (from x clipboard)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("B" "Bookmark for clocked project (from region)" item (function mpx-find-clocked-task-filename) "%x%?")
-
-)
-
+          ("f" "Bookmark for clocked project (from visited file)" item (function mpx-find-clocked-task-filename) "%F%?"))
         org-clock-history-length 64
         org-clock-in-resume t
         org-clock-into-drawer t

@@ -4,15 +4,12 @@
 # Author: Matthias
 #
 
-ps axf | grep -v grep | grep -q '/usr/local/bin/emacs'
+EMACSCLIENT=/usr/local/bin/emacsclient
 
-if [[ $? -eq 1 ]] ;
-then
-    emacs &
-else
-    EMACSCLIENT=/usr/local/bin/emacsclient
-    ${EMACSCLIENT} -e '(make-frame)'
-fi
+${EMACSCLIENT} --no-wait \
+               --create-frame \
+               --alternate-editor=/usr/local/bin/emacs \
+               $1
 
 ################
 #              #

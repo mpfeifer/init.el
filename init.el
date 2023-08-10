@@ -586,9 +586,12 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
 (defun mpx-setup-emacs-lisp-mode ()
   "Setup Emacs Lisp mode from the."
   (company-mode +1)
-  (flycheck-mode)
+  (flycheck-mode +1)
   (make-local-variable 'after-save-hook)
-  (add-hook 'after-save-hook 'mpx-recompile-elc-on-save))
+  (add-hook 'after-save-hook 'mpx-recompile-elc-on-save)
+  (when (string= (file-name-nondirectory (buffer-file-name)) "init.el")
+    (local-set-key (kbd "C-c C-i f") 'mpx-imenu-functions)
+    (local-set-key (kbd "C-c C-i u") 'mpx-imenu-use-package)))
 
 (use-package imenu
   :ensure nil
@@ -600,9 +603,6 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
 
   :bind (:map emacs-lisp-mode-map
               ("C-c C-c" . mpx-abracadabra-el))
-  :config
-  (local-set-key (kbd "C-c C-i f") 'mpx-imenu-functions)
-  (local-set-key (kbd "C-c C-i u") 'mpx-imenu-use-package)
   :ensure nil)
 
 (use-package projectile

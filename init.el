@@ -317,6 +317,8 @@ point is in org table."
   (setq company-idle-delay 0.3)
   (global-company-mode t))
 
+(use-package flycheck)
+
 (defun setup-tide-mode ()
   (interactive)
   (tide-setup)
@@ -328,6 +330,7 @@ point is in org table."
   (local-set-key (kbd "C-c c") 'change-case))
 
 (use-package typescript-mode
+  :after (flycheck)
   :hook ((typescript-mode . setup-tide-mode))
   ;;         (before-save . tide-format-before-save))
   :custom
@@ -346,8 +349,10 @@ point is in org table."
 
 (use-package dired
   :ensure nil
+  :custom
+  (dired-dwim-target t)
   :config
-  (setq dired-dwim-target t))
+  (define-key dired-mode-map (kbd "<backspace>") 'dired-up-directory))
 
 (use-package all-the-icons-dired
   :if (display-graphic-p)
@@ -564,7 +569,9 @@ If buffer was opened via emacsclient the buffer is opened in a new frame."
 (defun mpx-recompile-elc-on-save ()
   "If you're saving an elisp file, likely the .elc is no longer valid."
   (if (file-exists-p (byte-compile-dest-file buffer-file-name))
-      (byte-compile-file buffer-file-name)))
+      (byte-compile-file buffer-file-name)
+    (when (yes-or-no-p "Do you want to compile this file? ")
+      (byte-compile-file buffer-file-name))))
 
 (defun mpx-imenu-functions ()
   "Call imenu with `imenu-generic-expression` set for finding functions."
@@ -588,7 +595,7 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
   (company-mode +1)
   (flycheck-mode +1)
   (make-local-variable 'after-save-hook)
-  (add-hook 'after-save-hook 'mpx-recompile-elc-on-save)
+  (add-hook 'after-save-hook 'mpx-recompile-elc-on-save 0 t)
   (when (string= (file-name-nondirectory (buffer-file-name)) "init.el")
     (local-set-key (kbd "C-c C-i f") 'mpx-imenu-functions)
     (local-set-key (kbd "C-c C-i u") 'mpx-imenu-use-package)))
@@ -698,7 +705,6 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
          ("C-<f10>" . 'org-clock-in)
          ("M-C-<f10>" . 'org-clock-out))
   :config
-
   (defun mpx-find-clocked-task-filename ()
     "Open file that has task with org clock running."
     (interactive)
@@ -706,9 +712,9 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
     (search-forward "** Bookmarks")
     (org-return))
 
-  (setq org-default-notes-file systems/org-default-notes-file
+   (setq org-default-notes-file systems/org-default-notes-file
         org-agenda-span 'day
-        org-agenda-files `(,systems/org-agenda-file ,systems/org-projects-file ,systems/org-jira-file)
+        org-agenda-files `(,systems/org-agenda-file ,systems/org-tasks-file)
         org-todo-keywords '((sequence "TODO(t)" "INPROGRESS(i)" "WAITING(w)" "|" "DONE(d)"))
         org-todo-keyword-faces '(("TODO" . "red")
                                  ("IN_PROGRESS" . "dark orange")
@@ -719,10 +725,12 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
         org-capture-templates
         `(("l" "TIL" entry (file+olp+datetree ,systems/org-til-file)
            "* %?\n%x%^g")
-          ("T" "New task" entry ,systems/org-projects-file
+          ("T" "New task in default inbox" entry ,systems/org-tasks-file
            "* %?")
           ("t" "Task for clocked project" entry (clock)
            "** TODO %?")
+          ("p" "New project" entry ,systems/org-tasks-file
+           "* %?\r\n** Description\r\n** Bookmarks\r\n")
           ("b" "Bookmark for clocked project (from x clipboard)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("B" "Bookmark for clocked project (from region)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("f" "Bookmark for clocked project (from visited file)" item (function mpx-find-clocked-task-filename) "%F%?"))
@@ -765,6 +773,8 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
   :hook (org-mode . org-bullets-mode))
 
 (use-package plantuml-mode
+  :custom
+  (org-plantuml-jar-path systems/org-plantuml-jar-path)
   :mode "\\.plantuml\\'")
 
 (use-package markdown-mode

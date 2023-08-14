@@ -594,9 +594,10 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
   "Setup Emacs Lisp mode from the."
   (company-mode +1)
   (flycheck-mode +1)
-  (make-local-variable 'after-save-hook)
-  (add-hook 'after-save-hook 'mpx-recompile-elc-on-save 0 t)
-  (when (string= (file-name-nondirectory (buffer-file-name)) "init.el")
+  (when (and (buffer-file-name)
+             (string= (file-name-nondirectory (buffer-file-name)) "init.el"))
+    (make-local-variable 'after-save-hook)
+    (add-hook 'after-save-hook 'mpx-recompile-elc-on-save 0 t)
     (local-set-key (kbd "C-c C-i f") 'mpx-imenu-functions)
     (local-set-key (kbd "C-c C-i u") 'mpx-imenu-use-package)))
 
@@ -607,9 +608,8 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
 (use-package elisp-mode
   :after (imenu)
   :hook (emacs-lisp-mode . mpx-setup-emacs-lisp-mode)
-
-  :bind (:map emacs-lisp-mode-map
-              ("C-c C-c" . mpx-abracadabra-el))
+;;   :bind (:map emacs-lisp-mode-map
+;;              ("C-c C-c" . mpx-abracadabra-el))
   :ensure nil)
 
 (use-package projectile
@@ -725,12 +725,11 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
         org-capture-templates
         `(("l" "TIL" entry (file+olp+datetree ,systems/org-til-file)
            "* %?\n%x%^g")
-          ("T" "New task in default inbox" entry ,systems/org-tasks-file
+          ("T" "New task in default inbox" entry (file+headline ,systems/org-tasks-file "INBOX")
            "* %?")
-          ("t" "Task for clocked project" entry (clock)
-           "** TODO %?")
-          ("p" "New project" entry ,systems/org-tasks-file
-           "* %?\r\n** Description\r\n** Bookmarks\r\n")
+          ("t" "Task for clocked project" entry (function org-clock) "** TODO %?")
+          ("p" "New project" entry (file ,systems/org-tasks-file)
+           "* %?\n** Description\n** Bookmarks\n")
           ("b" "Bookmark for clocked project (from x clipboard)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("B" "Bookmark for clocked project (from region)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("f" "Bookmark for clocked project (from visited file)" item (function mpx-find-clocked-task-filename) "%F%?"))
@@ -897,6 +896,8 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
   :ensure nil
   :init
   (electric-pair-mode))
+
+(use-package lsp-sonarlint)
 
 (provide 'init)
 ;;; init.el ends here

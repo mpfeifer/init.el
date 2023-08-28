@@ -236,6 +236,11 @@ point is in org table."
   (line-number-mode)
   (column-number-mode))
 
+(use-package simple
+  :ensure nil
+  :config
+  (global-set-key (kbd "RET") 'default-indent-new-line))
+
 (use-package ibuffer-git)
 
 (use-package ibuffer-projectile)
@@ -608,8 +613,8 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
 (use-package elisp-mode
   :after (imenu)
   :hook (emacs-lisp-mode . mpx-setup-emacs-lisp-mode)
-;;   :bind (:map emacs-lisp-mode-map
-;;              ("C-c C-c" . mpx-abracadabra-el))
+  :bind (:map emacs-lisp-mode-map
+              ("C-c C-c" . mpx-abracadabra-el))
   :ensure nil)
 
 (use-package projectile
@@ -732,7 +737,8 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
            "* %?\n** Description\n** Bookmarks\n")
           ("b" "Bookmark for clocked project (from x clipboard)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("B" "Bookmark for clocked project (from region)" item (function mpx-find-clocked-task-filename) "%x%?")
-          ("f" "Bookmark for clocked project (from visited file)" item (function mpx-find-clocked-task-filename) "%F%?"))
+          ("f" "Bookmark for clocked project (from visited file)" item (function mpx-find-clocked-task-filename) "%F%?")
+          ("n" "Note for clocked project" entry (function org-clock "** %?")))
         org-clock-history-length 64
         org-clock-in-resume t
         org-clock-into-drawer t

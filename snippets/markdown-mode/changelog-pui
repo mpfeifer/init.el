@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: pui
+# key: pui
+# --
+
+- ${1:Beschreibung} ([PUI-${2:pui}](https://atlassian.keenlogics.com/jira/browse/PUI-$2))
+$0

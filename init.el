@@ -18,6 +18,11 @@
       package-enable-at-startup nil
       use-package-always-ensure t)
 
+(use-package files
+  :ensure nil
+  :custom
+  (auto-save-default nil))
+
 (load custom-file)
 
 ;; load system specific settings
@@ -116,7 +121,6 @@ point is in org table."
 (add-to-list 'load-path (format "%s/elisp" user-emacs-directory))
 
 (use-package hl-line
-  :disabled
   :ensure nil
   :config
   (global-hl-line-mode))

@@ -738,7 +738,7 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
            "* %?")
           ("t" "Task for clocked project" entry (function org-clock) "** TODO %?")
           ("p" "New project" entry (file ,systems/org-tasks-file)
-           "* %?\n** Description\n** Bookmarks\n")
+           "* %?\n** Description\n**Notes\n** Bookmarks\n")
           ("b" "Bookmark for clocked project (from x clipboard)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("B" "Bookmark for clocked project (from region)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("f" "Bookmark for clocked project (from visited file)" item (function mpx-find-clocked-task-filename) "%F%?")

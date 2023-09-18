@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: project
+# key: project
+# --
+* $0
+** TODO Inbox
+** Notes
+** Bookmarks

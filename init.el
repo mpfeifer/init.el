@@ -706,6 +706,8 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
   (add-hook 'org-mode-hook #'org-ai-mode)
   (org-ai-global-mode))
 
+(use-package ob-restclient)
+
 (use-package org
   :hook (org-mode . company-mode-off)
   :defines (org-clock-goto org-clock-in)
@@ -775,6 +777,7 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
    'org-babel-load-languages
    '((emacs-lisp . t)
      (dot . t)
+     (restclient . t)
      (plantuml . t)))
   (add-to-list 'org-src-lang-modes '("plantuml" . plantuml)))
 

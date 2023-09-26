@@ -340,12 +340,13 @@ point is in org table."
 
 (use-package typescript-mode
   :after (flycheck)
-  :hook ((typescript-mode . setup-tide-mode))
+  ;; :hook ((typescript-mode . setup-tide-mode))
   ;;         (before-save . tide-format-before-save))
   :custom
   (typescript-indent-level systems/typescript-indent-level)
   :config
-  (setq-default typescript-indent-level 4))
+  (setq-default typescript-indent-level 4)
+  (local-set-key (kbd "M-:") 'tide-jump-back))
 
 ;; this changes in emacs 29+
 (use-package tide
@@ -798,12 +799,18 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
   :defines (edit-list)
   :after elisp-mode)
 
+(defun mpx/popup-shell ()
+  (interactive)
+  (let ((display-buffer-alist '(("*shell*" . (display-buffer-pop-up-window)))))
+    (shell)))
+
 (use-package shell
-  :bind (("<f5>" . shell))
+  :bind (("<f5>" . shell)
+         ("C-<f5>" . mpx/popup-shell))
   :ensure nil
   :config
   (add-to-list 'display-buffer-alist
-               '("*shell*"  (display-buffer-pop-up-window))))
+               '("*shell*"  (display-buffer-pop-up-frame))))
 
 (use-package graphviz-dot-mode)
 

@@ -361,8 +361,15 @@ point is in org table."
   :ensure nil
   :custom
   (dired-dwim-target t)
+
   :config
   (define-key dired-mode-map (kbd "<backspace>") 'dired-up-directory))
+
+(use-package find-dired
+  :after (dired)
+  :ensure nil
+  :config
+  (global-set-key (kbd "C-c C-g") 'find-grep-dired))
 
 (use-package all-the-icons-dired
   :if (display-graphic-p)

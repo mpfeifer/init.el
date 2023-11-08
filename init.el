@@ -516,10 +516,6 @@ point is in org table."
 
 ;; (use-package tree-sitter-langs)
 
-(use-package lambda-line
-  :ensure nil
-  :after (lamda-themes))
-
 (use-package solarized-theme)
 
 (use-package calendar
@@ -544,17 +540,8 @@ point is in org table."
 
 (use-package theme-changer
   :after (solarized-theme solar)
-  :defines (change-theme)
   :config
-  (let ((line (face-attribute 'mode-line :underline)))
-    (set-face-attribute 'mode-line          nil :overline   line)
-    (set-face-attribute 'mode-line-inactive nil :overline   line)
-    (set-face-attribute 'mode-line-inactive nil :underline  line)
-    (set-face-attribute 'mode-line          nil :box        nil)
-    (set-face-attribute 'mode-line-inactive nil :box        nil)
-    (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9"))
-  :config
-  (change-theme 'solarized-light 'solarized-dark))
+  (change-theme 'solarized-selenized-light 'solarized-dark))
 
 (use-package mood-line
   :config
@@ -748,7 +735,7 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
            "* %?")
           ("t" "Task for clocked project" entry (function org-clock) "** TODO %?")
           ("p" "New project" entry (file ,systems/org-tasks-file)
-           "* %?\n** Description\n**Notes\n** Bookmarks\n")
+           "* %?\n** Description\n** Notes\n** Bookmarks\n")
           ("b" "Bookmark for clocked project (from x clipboard)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("B" "Bookmark for clocked project (from region)" item (function mpx-find-clocked-task-filename) "%x%?")
           ("f" "Bookmark for clocked project (from visited file)" item (function mpx-find-clocked-task-filename) "%F%?")
@@ -929,12 +916,33 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
 (use-package centaur-tabs
   :bind (("C-<next>" . centaur-tabs-forward-tab)
          ("C-<prior>" . centaur-tabs-backward-tab))
+  :config
+  (setq
+   centaur-tabs-set-icons t
+        centaur-tabs-gray-out-icons 'buffer
+        centaur-tabs-set-close-button nil
+        centaur-tabs-set-modified-marker t
+        centaur-tabs-label-fixed-length 24
+        centaur-tabs-buffer-groups-function 'centaur-tabs-projectile-buffer-groups)
   :init
   (centaur-tabs-mode))
+
 
 (use-package which-key
   :init
   (which-key-mode))
+
+(use-package simple-httpd
+  :config
+  (defun httpd-from-private-public-html ()
+    "Start simple-http from public_html in user home directory."
+    (interactive)
+    (httpd-serve-directory "~/public_html/"))
+
+  (setq httpd-port 8081)
+  (defvar simple-httpd-keymap (make-sparse-keymap))
+  (global-set-key (kbd "C-h h") simple-httpd-keymap)
+  (define-key simple-httpd-keymap (kbd "s") 'httpd-from-private-public-html))
 
 (provide 'init)
 ;;; init.el ends here

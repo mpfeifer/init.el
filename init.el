@@ -914,6 +914,7 @@ Have `imenu-generic-expression` set for finding use-pacakge declerations."
 (use-package lsp-sonarlint)
 
 (use-package centaur-tabs
+  :disabled
   :bind (("C-<next>" . centaur-tabs-forward-tab)
          ("C-<prior>" . centaur-tabs-backward-tab))
   :config
